@@ -315,7 +315,7 @@ export default function AdminCustomersPage() {
   /* ── Fetch customers ── */
   const fetchCustomers = useCallback(async () => {
     if (!adminUser?.id) return;
-    setFetching(true);
+    setFetching(true);  
     try {
       const res  = await fetch(`/api/customers?admin_id=${adminUser.id}`);
       const data = await res.json();
