@@ -48,8 +48,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark">V</div>
-        <span className="sidebar-logo-name">VendX POS</span>
+        <div className="sidebar-logo-mark">P</div>
+        <span className="sidebar-logo-name">POStore</span>
       </div>
 
       <div className="sidebar-section">Main</div>
