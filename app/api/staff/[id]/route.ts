@@ -5,11 +5,11 @@ import bcrypt from "bcryptjs";
 /* ── PUT /api/staff/[id] — update staff (admin ownership verified) ── */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } 
 ): Promise<NextResponse> {
   try {
     const { full_name, email, password, admin_id } = await request.json();
-    const { id } = params;
+    const { id } = await params;
 
     if (!full_name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -65,10 +65,10 @@ export async function PUT(
 /* ── DELETE /api/staff/[id] — remove staff (admin ownership verified) ── */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    const { id } = params;
+    const { id } = await params;
     const admin_id = request.nextUrl.searchParams.get("admin_id");
 
     if (!admin_id) {

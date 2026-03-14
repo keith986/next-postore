@@ -359,10 +359,10 @@ export default function AdminStaffPage() {
             `/api/staff/${member.id}?admin_id=${adminUser.id}`,
             { method: "DELETE" }
           );
-          if (!res.ok) throw new Error("Failed");
+          if (!res.ok) throw new Error('failed');
           showToast(`${member.full_name} removed`);
           fetchStaff();
-        } catch (err) {
+        } catch {
           showToast("Failed to remove cashier" , "error");
         }
       }
@@ -379,7 +379,7 @@ export default function AdminStaffPage() {
   const inactiveCount = staff.filter(s => s.status === "inactive").length;
 
   const dater = new Intl.DateTimeFormat("en-US", {
-    month: "short", day: "numeric", year: "numeric",
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
   }).format(new Date());
 
   return (

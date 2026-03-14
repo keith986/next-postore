@@ -370,7 +370,9 @@ export default function AdminSettingsPage() {
     ? user.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : "—";
 
-  const dater = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date());
+  const dater = new Intl.DateTimeFormat("en-US", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+  }).format(new Date());
 
   return (
     <>

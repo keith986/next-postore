@@ -48,19 +48,43 @@ export async function initDb(): Promise<void> {
 `);
 console.log("✅ Table: staff");
   
-  await conn.query(`
-    CREATE TABLE IF NOT EXISTS products (
-      id         CHAR(36)      PRIMARY KEY DEFAULT (UUID()),
-      name       VARCHAR(150)  NOT NULL,
-      category   VARCHAR(80),
-      price      DECIMAL(10,2) NOT NULL,
-      stock      INT           DEFAULT 0,
-      sku        VARCHAR(50)   UNIQUE,
-      emoji      VARCHAR(10),
-      created_at TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  console.log("✅ Table: products");
+await conn.query(`
+  CREATE TABLE IF NOT EXISTS products (
+  id          VARCHAR(36)    NOT NULL PRIMARY KEY,
+  name        VARCHAR(255)   NOT NULL,
+  category    VARCHAR(100)   NOT NULL,
+  price       DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
+  stock       INT            NOT NULL DEFAULT 0,
+  sku         VARCHAR(100)   NULL,
+  description TEXT           NULL,
+  status      ENUM('active','inactive') NOT NULL DEFAULT 'active',
+  admin_id    VARCHAR(36)    NOT NULL,
+  created_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_admin_id (admin_id),
+  INDEX idx_category (category),
+  INDEX idx_status   (status)
+)
+`)
+console.log("✅ Table: products");
+
+await conn.query(`
+  CREATE TABLE IF NOT EXISTS stock_movements (
+  id          VARCHAR(36)                                      NOT NULL PRIMARY KEY,
+  product_id  VARCHAR(36)                                      NOT NULL,
+  type        ENUM('restock', 'adjustment', 'sale', 'return')  NOT NULL,
+  quantity    INT                                               NOT NULL,
+  note        TEXT                                              NULL,
+  admin_id    VARCHAR(36)                                      NOT NULL,
+  created_at  TIMESTAMP                                        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ 
+  INDEX idx_product_id (product_id),
+  INDEX idx_admin_id   (admin_id),
+  INDEX idx_created_at (created_at)
+)
+`)
+console.log("✅ Table: stock_movements");
 
   await conn.query(`
     CREATE TABLE IF NOT EXISTS sales (
