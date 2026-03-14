@@ -68,18 +68,17 @@ const BellIcon  = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="no
 export default function AdminDashboard() {
   const maxBar = Math.max(...barData.map(d => d.v));
 
+  const dater = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date());
+
   return (
     <>
       <header className="header">
         <div className="header-title">Overview</div>
-        <div className="header-date">Friday, 13 March 2026</div>
+        <div className="header-date">{dater}</div>
         <div className="header-bell">
           <BellIcon />
           <div className="bell-dot" />
         </div>
-        <button className="header-btn">
-          <span>+</span> New Sale
-        </button>
       </header>
 
       <main className="main">

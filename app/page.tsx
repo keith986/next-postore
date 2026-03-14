@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap');
@@ -213,19 +214,42 @@ const css = `
   }
 `;
 
+const ROLE_REDIRECT : { [key: string]: string } = {
+  admin:  "/admin/dashboard",
+  staff:  "/staff/dashboard",
+  client: "/client/dashboard",
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e : React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e : React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     if (!email || !password) return setError("Please fill in all fields.");
     setLoading(true);
+
+    const res = await fetch("/api/auth/login", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ email, password }),
+                });
+    const data = await res.json();
+
+    localStorage.setItem("user", JSON.stringify(data.user));
+
     setTimeout(() => setLoading(false), 1500);
-    // TODO: replace with your real auth call
+
+    if (data.error) {
+      setError(data.error);
+    } else {
+      router.push(ROLE_REDIRECT[data.user.role]);
+    }
+    
   };
 
   return (
