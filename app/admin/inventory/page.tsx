@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useStore } from "@/app/_lib/StoreContext";
 
 /* ── Types — match existing products table exactly ── */
 interface InventoryItem {
@@ -48,24 +49,6 @@ function getStoredUser(): StoredUser | null {
   } catch { return null; }
 }
 
-function formatCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
-
-function formatDate(d: string): string {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  } catch { return "—"; }
-}
-
-function formatDateTime(d: string): string {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch { return "—"; }
-}
-
 /* ── Shared styles ── */
 const fieldStyle: React.CSSProperties = {
   width: "100%", background: "#f5f4f0",
@@ -79,6 +62,36 @@ const labelStyle: React.CSSProperties = {
   color: "#4a4a40", marginBottom: 5,
 };
 
+/* ── SVG Icons ── */
+function IconRefresh() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+    </svg>
+  );
+}
+function IconArrowUp() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+    </svg>
+  );
+}
+function IconArrowDown() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+    </svg>
+  );
+}
+function IconArrowUpDown() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 11 12 6 7 11"/><polyline points="7 13 12 18 17 13"/>
+    </svg>
+  );
+}
+
 /* ── Toast ── */
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
@@ -90,7 +103,12 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
       boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
       animation: "toastIn 0.3s ease", zIndex: 1100,
     }}>
-      <span style={{ fontSize: 16 }}>{type === "error" ? "❌" : "✅"}</span>
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {type === "error"
+          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        }
+      </span>
       {msg}
       <style>{`@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
@@ -142,13 +160,14 @@ function MovementBadge({ type }: { type: StockMovement["type"] }) {
 
 /* ── Adjust Panel ── */
 function AdjustPanel({
-  open, onClose, item, onSave, saving,
+  open, onClose, item, onSave, saving, formatCurrency,
 }: {
-  open:    boolean;
-  onClose: () => void;
-  item:    InventoryItem | null;
-  onSave:  (form: AdjustForm) => void;
-  saving:  boolean;
+  open:           boolean;
+  onClose:        () => void;
+  item:           InventoryItem | null;
+  onSave:         (form: AdjustForm) => void;
+  saving:         boolean;
+  formatCurrency: (n: number) => string;
 }) {
   const blank: AdjustForm = { type: "restock", quantity: "", note: "" };
   const [form, setForm] = useState<AdjustForm>(blank);
@@ -275,13 +294,14 @@ function AdjustPanel({
 
 /* ── History Drawer ── */
 function HistoryDrawer({
-  open, onClose, productName, movements, loading,
+  open, onClose, productName, movements, loading, formatDateTime,
 }: {
-  open:        boolean;
-  onClose:     () => void;
-  productName: string;
-  movements:   StockMovement[];
-  loading:     boolean;
+  open:            boolean;
+  onClose:         () => void;
+  productName:     string;
+  movements:       StockMovement[];
+  loading:         boolean;
+  formatDateTime:  (d: string) => string;
 }) {
   if (!open) return null;
   return (
@@ -311,9 +331,14 @@ function HistoryDrawer({
               <div style={{
                 width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                 background: m.type === "sale" ? "#fef2f2" : m.type === "adjustment" ? "#eff6ff" : "#f0fdf4",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {m.type === "sale" ? "↓" : m.type === "adjustment" ? "↔" : "↑"}
+                {m.type === "sale"
+                  ? <IconArrowDown />
+                  : m.type === "adjustment"
+                    ? <IconArrowUpDown />
+                    : <IconArrowUp />
+                }
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
@@ -338,6 +363,7 @@ function HistoryDrawer({
 ───────────────────────────────────────── */
 export default function AdminInventoryPage() {
   const [adminUser]    = useState<StoredUser | null>(getStoredUser);
+  const { formatCurrency, formatDate, formatDateTime } = useStore();
   const [inventory,    setInventory]    = useState<InventoryItem[]>([]);
   const [movements,    setMovements]    = useState<StockMovement[]>([]);
   const [fetching,     setFetching]     = useState(true);
@@ -449,6 +475,7 @@ export default function AdminInventoryPage() {
         item={adjustTarget}
         onSave={handleAdjust}
         saving={saving}
+        formatCurrency={formatCurrency}
       />
 
       <HistoryDrawer
@@ -457,6 +484,7 @@ export default function AdminInventoryPage() {
         productName={histTarget?.product_name ?? ""}
         movements={movements}
         loading={histLoading}
+        formatDateTime={formatDateTime}
       />
 
       {/* ── Header ── */}
@@ -467,7 +495,7 @@ export default function AdminInventoryPage() {
           onClick={fetchInventory}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#fff", color: "#141410", border: "1px solid #c8c6bc", borderRadius: 7, fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}
         >
-          ↻ Refresh
+          <IconRefresh /> Refresh
         </button>
       </header>
 

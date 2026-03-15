@@ -6,9 +6,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
     const { user_id, currentPassword, newPassword } = await request.json();
 
-    if (!user_id || !currentPassword || !newPassword) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-    }
+    if (!user_id || !currentPassword || !newPassword)
+      return NextResponse.json({ error: "user_id, currentPassword and newPassword are required" }, { status: 400 });
+
+    if (newPassword.length < 8)
+      return NextResponse.json({ error: "New password must be at least 8 characters" }, { status: 400 });
 
     const pool = await getPool();
 

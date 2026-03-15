@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Sidebar from "./Sidebar";
+import { StoreProvider } from "@/app/_lib/StoreContext";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap');
@@ -315,12 +316,12 @@ const css = `
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <>
+    <StoreProvider>
       <style>{css}</style>
       <div className="shell">
         <Sidebar />
         {children}
       </div>
-    </>
+    </StoreProvider>
   );
 }

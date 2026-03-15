@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useStore } from "@/app/_lib/StoreContext";
 
 /* ── Types ── */
 interface Customer {
@@ -48,17 +49,6 @@ function getStoredUser(): StoredUser | null {
   } catch { return null; }
 }
 
-function formatCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
-
-function formatDate(d: string): string {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  } catch { return "—"; }
-}
-
 function getInitials(name: string): string {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 }
@@ -84,6 +74,38 @@ const labelStyle: React.CSSProperties = {
   color: "#4a4a40", marginBottom: 5,
 };
 
+/* ── SVG Icons ── */
+function IconWarning() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+function IconUser() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+function IconStar() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+}
+function IconUserPlus() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
+      <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+    </svg>
+  );
+}
+
 /* ── Toast ── */
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
@@ -95,7 +117,12 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
       boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
       animation: "toastIn 0.3s ease", zIndex: 1100,
     }}>
-      <span style={{ fontSize: 16 }}>{type === "error" ? "❌" : "✅"}</span>
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {type === "error"
+          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        }
+      </span>
       {msg}
       <style>{`@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
@@ -117,7 +144,7 @@ function ConfirmModal({ state, onCancel }: { state: ConfirmState; onCancel: () =
         animation: "slideUp 0.2s ease",
       }}>
         <div style={{ width: 44, height: 44, borderRadius: "50%", background: state.danger ? "#fef2f2" : "#f5f4f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: "1rem" }}>
-          {state.danger ? "⚠️" : "👤"}
+          {state.danger ? <IconWarning /> : <IconUser />}
         </div>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#141410", marginBottom: 8 }}>{state.title}</div>
         <div style={{ fontSize: 13, color: "#9a9a8e", lineHeight: 1.6, marginBottom: "1.5rem" }}>{state.message}</div>
@@ -146,14 +173,16 @@ function Spinner() {
 
 /* ── Customer Panel (add / edit / view) ── */
 function CustomerPanel({
-  open, onClose, mode, customer, onSave, saving,
+  open, onClose, mode, customer, onSave, saving, formatCurrency, formatDate,
 }: {
-  open:      boolean;
-  onClose:   () => void;
-  mode:      "add" | "edit" | "view";
-  customer?: Customer | null;
-  onSave:    (form: CustomerForm) => void;
-  saving:    boolean;
+  open:           boolean;
+  onClose:        () => void;
+  mode:           "add" | "edit" | "view";
+  customer?:      Customer | null;
+  onSave:         (form: CustomerForm) => void;
+  saving:         boolean;
+  formatCurrency: (n: number) => string;
+  formatDate:     (d: string) => string;
 }) {
   const blank: CustomerForm = { full_name: "", email: "", phone: "" };
   const [form, setForm] = useState<CustomerForm>(blank);
@@ -292,6 +321,7 @@ function CustomerPanel({
 ───────────────────────────────────────── */
 export default function AdminCustomersPage() {
   const [adminUser]  = useState<StoredUser | null>(getStoredUser);
+  const { formatCurrency, formatDate } = useStore();
   const [customers,  setCustomers]  = useState<Customer[]>([]);
   const [fetching,   setFetching]   = useState(true);
   const [saving,     setSaving]     = useState(false);
@@ -315,7 +345,7 @@ export default function AdminCustomersPage() {
   /* ── Fetch customers ── */
   const fetchCustomers = useCallback(async () => {
     if (!adminUser?.id) return;
-    setFetching(true);  
+    setFetching(true);
     try {
       const res  = await fetch(`/api/customers?admin_id=${adminUser.id}`);
       const data = await res.json();
@@ -444,6 +474,8 @@ export default function AdminCustomersPage() {
         customer={selected}
         onSave={handleSave}
         saving={saving}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
       />
 
       {/* ── Header ── */}
@@ -454,7 +486,7 @@ export default function AdminCustomersPage() {
           onClick={() => { setPanelMode("add"); setSelected(null); setPanelOpen(true); }}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#141410", color: "#fff", border: "none", borderRadius: 7, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
         >
-          + Add Customer
+          <IconUserPlus /> Add Customer
         </button>
       </header>
 
@@ -577,7 +609,7 @@ export default function AdminCustomersPage() {
                       {/* Loyalty */}
                       <td style={{ padding: "0.85rem 1.25rem" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: "#d97706", background: "#fffbeb", border: "1px solid #fde68a", padding: "2px 8px", borderRadius: 100, fontWeight: 500 }}>
-                          ★ {c.loyalty_points} pts
+                          <IconStar /> {c.loyalty_points} pts
                         </span>
                       </td>
 

@@ -28,140 +28,137 @@ export async function initDb(): Promise<void> {
       role       ENUM('admin','staff','client') DEFAULT 'client',
       store_name VARCHAR(100),
       domain     VARCHAR(100) UNIQUE,
+      pos_type   ENUM('retail','restaurant','salon','wholesale','pharmacy') NULL DEFAULT NULL,
       created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
     )
   `);
   console.log("✅ Table: users");
-  
-  await conn.query(`
-  CREATE TABLE IF NOT EXISTS staff (
-    id         CHAR(36)   PRIMARY KEY,
-    full_name  VARCHAR(100) NOT NULL,
-    email      VARCHAR(150) NOT NULL UNIQUE,
-    password   VARCHAR(255) NOT NULL,
-    admin_id   CHAR(36)   NOT NULL,
-    shift_role ENUM('staff') DEFAULT 'staff',
-    status     ENUM('active','inactive') DEFAULT 'active',
-    last_login TIMESTAMP  NULL DEFAULT NULL,
-    created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-console.log("✅ Table: staff");
-  
-await conn.query(`
-  CREATE TABLE IF NOT EXISTS products (
-  id          VARCHAR(36)    NOT NULL PRIMARY KEY,
-  name        VARCHAR(255)   NOT NULL,
-  category    VARCHAR(100)   NOT NULL,
-  price       DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
-  stock       INT            NOT NULL DEFAULT 0,
-  sku         VARCHAR(100)   NULL,
-  description TEXT           NULL,
-  status      ENUM('active','inactive') NOT NULL DEFAULT 'active',
-  admin_id    VARCHAR(36)    NOT NULL,
-  created_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-  INDEX idx_admin_id (admin_id),
-  INDEX idx_category (category),
-  INDEX idx_status   (status)
-)
-`)
-console.log("✅ Table: products");
-
-await conn.query(`
-  CREATE TABLE IF NOT EXISTS stock_movements (
-  id          VARCHAR(36)                                      NOT NULL PRIMARY KEY,
-  product_id  VARCHAR(36)                                      NOT NULL,
-  type        ENUM('restock', 'adjustment', 'sale', 'return')  NOT NULL,
-  quantity    INT                                               NOT NULL,
-  note        TEXT                                              NULL,
-  admin_id    VARCHAR(36)                                      NOT NULL,
-  created_at  TIMESTAMP                                        NOT NULL DEFAULT CURRENT_TIMESTAMP,
- 
-  INDEX idx_product_id (product_id),
-  INDEX idx_admin_id   (admin_id),
-  INDEX idx_created_at (created_at)
-)
-`)
-console.log("✅ Table: stock_movements");
 
   await conn.query(`
-    CREATE TABLE IF NOT EXISTS sales (
-      id         CHAR(36)      PRIMARY KEY DEFAULT (UUID()),
-      staff_id   CHAR(36),
-      total      DECIMAL(10,2) NOT NULL,
-      tax        DECIMAL(10,2) DEFAULT 0,
-      method     ENUM('card','cash','mobile') DEFAULT 'card',
-      status     ENUM('completed','pending','refunded') DEFAULT 'completed',
-      created_at TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE SET NULL
+    CREATE TABLE IF NOT EXISTS staff (
+      id         CHAR(36)     PRIMARY KEY,
+      full_name  VARCHAR(100) NOT NULL,
+      email      VARCHAR(150) NOT NULL UNIQUE,
+      password   VARCHAR(255) NOT NULL,
+      admin_id   CHAR(36)     NOT NULL,
+      shift_role ENUM('staff') DEFAULT 'staff',
+      status     ENUM('active','inactive') DEFAULT 'active',
+      last_login TIMESTAMP    NULL DEFAULT NULL,
+      created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_admin_id (admin_id)
     )
   `);
-  console.log("✅ Table: sales");
+  console.log("✅ Table: staff");
 
   await conn.query(`
-    CREATE TABLE IF NOT EXISTS sale_items (
-      id         CHAR(36)      PRIMARY KEY DEFAULT (UUID()),
-      sale_id    CHAR(36)      NOT NULL,
-      product_id CHAR(36)      NOT NULL,
-      quantity   INT           NOT NULL,
-      unit_price DECIMAL(10,2) NOT NULL,
-      FOREIGN KEY (sale_id)    REFERENCES sales(id)    ON DELETE CASCADE,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS products (
+      id          VARCHAR(36)   NOT NULL PRIMARY KEY,
+      name        VARCHAR(255)  NOT NULL,
+      category    VARCHAR(100)  NOT NULL,
+      price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      stock       INT           NOT NULL DEFAULT 0,
+      sku         VARCHAR(100)  NULL,
+      description TEXT          NULL,
+      status      ENUM('active','inactive') NOT NULL DEFAULT 'active',
+      admin_id    VARCHAR(36)   NOT NULL,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id (admin_id),
+      INDEX idx_category (category),
+      INDEX idx_status   (status)
     )
   `);
-  console.log("✅ Table: sale_items");
+  console.log("✅ Table: products");
+
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id          VARCHAR(36)  NOT NULL PRIMARY KEY,
+      product_id  VARCHAR(36)  NOT NULL,
+      type        ENUM('restock','adjustment','sale','return') NOT NULL,
+      quantity    INT          NOT NULL,
+      note        TEXT         NULL,
+      admin_id    VARCHAR(36)  NOT NULL,
+      created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_product_id (product_id),
+      INDEX idx_admin_id   (admin_id),
+      INDEX idx_created_at (created_at)
+    )
+  `);
+  console.log("✅ Table: stock_movements");
 
   await conn.query(`
     CREATE TABLE IF NOT EXISTS customers (
-      id         CHAR(36)  PRIMARY KEY,
-      points     INT       DEFAULT 0,
-      tier       ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+      id             VARCHAR(36)   NOT NULL PRIMARY KEY,
+      full_name      VARCHAR(255)  NOT NULL,
+      email          VARCHAR(255)  NOT NULL,
+      phone          VARCHAR(50)   NULL,
+      status         ENUM('active','inactive') NOT NULL DEFAULT 'active',
+      total_orders   INT           NOT NULL DEFAULT 0,
+      total_spent    DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      loyalty_points INT           NOT NULL DEFAULT 0,
+      admin_id       VARCHAR(36)   NOT NULL,
+      last_order     TIMESTAMP     NULL,
+      created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id (admin_id),
+      INDEX idx_email    (email),
+      INDEX idx_status   (status)
     )
   `);
   console.log("✅ Table: customers");
 
   await conn.query(`
-    CREATE TABLE IF NOT EXISTS staff (
-      id         CHAR(36)  PRIMARY KEY,
-      store_name VARCHAR(100),
-      shift_role ENUM('cashier','supervisor','manager') DEFAULT 'cashier',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS orders (
+      id             VARCHAR(36)   NOT NULL PRIMARY KEY,
+      order_number   VARCHAR(50)   NOT NULL UNIQUE,
+      customer_id    VARCHAR(36)   NULL,
+      customer_name  VARCHAR(255)  NOT NULL,
+      customer_email VARCHAR(255)  NOT NULL DEFAULT '',
+      items          JSON          NOT NULL,
+      subtotal       DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      tax            DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      total          DECIMAL(12,2) NOT NULL,
+      status         ENUM('pending','processing','completed','refunded','cancelled') NOT NULL DEFAULT 'pending',
+      payment_method ENUM('card','cash','mobile') NOT NULL DEFAULT 'cash',
+      payment_status ENUM('paid','pending','refunded') NOT NULL DEFAULT 'paid',
+      staff_name     VARCHAR(255)  NULL,
+      note           TEXT          NULL,
+      admin_id       VARCHAR(36)   NOT NULL,
+      created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id    (admin_id),
+      INDEX idx_status      (status),
+      INDEX idx_customer_id (customer_id),
+      INDEX idx_created_at  (created_at)
     )
   `);
-  console.log("✅ Table: staff");
+  console.log("✅ Table: orders");
 
-  // Settings table with single-row constraint for global store configuration
-
-await conn.query(`
-  CREATE TABLE IF NOT EXISTS settings (
-    id              INT          PRIMARY KEY DEFAULT 1,
-    store_name      VARCHAR(100) DEFAULT 'POStore',
-    domain          VARCHAR(100) DEFAULT 'postore',
-    email           VARCHAR(150) DEFAULT 'admin@postore.app',
-    phone           VARCHAR(50)  DEFAULT '',
-    address         VARCHAR(255) DEFAULT '',
-    currency        VARCHAR(10)  DEFAULT 'KES',
-    timezone        VARCHAR(60)  DEFAULT 'Africa/Nairobi',
-    tax_enabled     TINYINT(1)   DEFAULT 1,
-    tax_rate        DECIMAL(5,2) DEFAULT 16.00,
-    tax_name        VARCHAR(20)  DEFAULT 'VAT',
-    tax_inclusive   TINYINT(1)   DEFAULT 0,
-    receipt_footer  TEXT,
-    notif_new_order    TINYINT(1) DEFAULT 1,
-    notif_low_stock    TINYINT(1) DEFAULT 1,
-    notif_daily_report TINYINT(1) DEFAULT 0,
-    notif_staff_login  TINYINT(1) DEFAULT 0,
-    notif_email     VARCHAR(255) DEFAULT 'admin@postore.app',
-    updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT single_row CHECK (id = 1)
-  )
-`);
-console.log("✅ Table: settings");
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      admin_id           CHAR(36)     NOT NULL UNIQUE,
+      store_name         VARCHAR(100) DEFAULT 'POStore',
+      domain             VARCHAR(100) DEFAULT 'postore',
+      email              VARCHAR(150) DEFAULT '',
+      phone              VARCHAR(50)  DEFAULT '',
+      address            VARCHAR(255) DEFAULT '',
+      currency           VARCHAR(10)  DEFAULT 'KES',
+      timezone           VARCHAR(60)  DEFAULT 'Africa/Nairobi',
+      tax_enabled        TINYINT(1)   DEFAULT 1,
+      tax_rate           DECIMAL(5,2) DEFAULT 16.00,
+      tax_name           VARCHAR(20)  DEFAULT 'VAT',
+      tax_inclusive      TINYINT(1)   DEFAULT 0,
+      receipt_footer     TEXT,
+      notif_new_order    TINYINT(1)   DEFAULT 1,
+      notif_low_stock    TINYINT(1)   DEFAULT 1,
+      notif_daily_report TINYINT(1)   DEFAULT 0,
+      notif_staff_login  TINYINT(1)   DEFAULT 0,
+      notif_email        VARCHAR(255) DEFAULT '',
+      updated_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  console.log("✅ Table: settings");
 
   // ── SEED DEFAULT ADMIN ───────────────────────────────
 

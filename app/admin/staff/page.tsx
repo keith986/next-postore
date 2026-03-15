@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 /* ── Types ── */
 interface StaffMember {
@@ -47,6 +47,38 @@ function getStoredUser(): StoredUser | null {
   } catch { return null; }
 }
 
+/* ── SVG Icons ── */
+function IconWarning() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+function IconUser() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+function IconInfo() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  );
+}
+function IconUserPlus() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
+      <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+    </svg>
+  );
+}
+
 /* ── Shared styles ── */
 const fieldStyle: React.CSSProperties = {
   width: "100%", background: "#f5f4f0",
@@ -87,7 +119,12 @@ function Toast({ msg, type = "success" }: { msg: string; type?: "success" | "err
       boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
       animation: "toastIn 0.3s ease", zIndex: 1100,
     }}>
-      <span style={{ fontSize: 16 }}>{type === "error" ? "❌" : "✅"}</span> {msg}
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {type === "error"
+          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        }
+      </span> {msg}
       <style>{`@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
@@ -107,7 +144,7 @@ function ConfirmModal({ state, onCancel }: { state: ConfirmState; onCancel: () =
         animation: "slideUp 0.2s ease",
       }}>
         <div style={{ width: 44, height: 44, borderRadius: "50%", background: state.danger ? "#fef2f2" : "#f5f4f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: "1rem" }}>
-          {state.danger ? "⚠️" : "👤"}
+          {state.danger ? <IconWarning /> : <IconUser />}
         </div>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#141410", marginBottom: 8 }}>{state.title}</div>
         <div style={{ fontSize: 13, color: "#9a9a8e", lineHeight: 1.6, marginBottom: "1.5rem" }}>{state.message}</div>
@@ -188,7 +225,9 @@ function StaffPanel({
         <div style={{ padding: "1.5rem", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1.1rem" }}>
           {mode === "add" && (
             <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "0.75rem 1rem", fontSize: 12, color: "#1e40af" }}>
-              💡 Staff members will be added as cashiers and can access the POS to record sales.
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <IconInfo /> Staff members will be added as cashiers and can access the POS to record sales.
+              </span>
             </div>
           )}
 
@@ -359,11 +398,11 @@ export default function AdminStaffPage() {
             `/api/staff/${member.id}?admin_id=${adminUser.id}`,
             { method: "DELETE" }
           );
-          if (!res.ok) throw new Error('failed');
+          if (!res.ok) throw new Error("Failed");
           showToast(`${member.full_name} removed`);
           fetchStaff();
         } catch {
-          showToast("Failed to remove cashier" , "error");
+          showToast("Failed to remove cashier", "error");
         }
       }
     );
@@ -379,7 +418,7 @@ export default function AdminStaffPage() {
   const inactiveCount = staff.filter(s => s.status === "inactive").length;
 
   const dater = new Intl.DateTimeFormat("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
+    month: "short", day: "numeric", year: "numeric",
   }).format(new Date());
 
   return (
@@ -403,7 +442,7 @@ export default function AdminStaffPage() {
           onClick={() => { setPanelMode("add"); setEditTarget(null); setPanelOpen(true); }}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#141410", color: "#fff", border: "none", borderRadius: 7, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
         >
-          + Add Staff
+          <IconUserPlus /> Add Staff
         </button>
       </header>
 
@@ -417,6 +456,7 @@ export default function AdminStaffPage() {
             </div>
             <span>
               Managing staff for <strong style={{ color: "#141410" }}>{adminUser.store_name ?? adminUser.full_name}</strong>
+              <span style={{ color: "#9a9a8e" }}> · Only your cashiers are shown</span>
             </span>
           </div>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useStore } from "@/app/_lib/StoreContext";
 
 /* ── Types ── */
 interface StoreSettings {
@@ -56,6 +57,21 @@ interface ConfirmState {
 }
 
 const TABS = ["Store", "Profile", "Tax & Billing", "Notifications", "Security", "Danger Zone"] as const;
+
+/* ── Password strength calculator ── */
+function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+  if (!pw) return { score: 0, label: "", color: "#e2e0d8" };
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 1) return { score, label: "Weak",   color: "#dc2626" };
+  if (score <= 2) return { score, label: "Fair",   color: "#d97706" };
+  if (score <= 3) return { score, label: "Good",   color: "#2563eb" };
+  return              { score, label: "Strong", color: "#16a34a" };
+}
 type Tab = typeof TABS[number];
 
 /* ── Helpers ── */
@@ -84,6 +100,56 @@ const rowStyle: React.CSSProperties      = { display: "grid", gridTemplateColumn
 const cardStyle: React.CSSProperties     = { background: "#fff", border: "1px solid #e2e0d8", borderRadius: 12, overflow: "hidden" };
 const cardHeaderStyle: React.CSSProperties = { padding: "1rem 1.25rem", borderBottom: "1px solid #e2e0d8", display: "flex", alignItems: "center", justifyContent: "space-between" };
 const cardBodyStyle: React.CSSProperties = { padding: "1.25rem" };
+
+/* ── SVG Icons ── */
+function IconWarning() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+function IconSave() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+    </svg>
+  );
+}
+function IconInfo() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  );
+}
+function IconPhone() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a9a8e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+      <line x1="12" y1="18" x2="12.01" y2="18"/>
+    </svg>
+  );
+}
+function IconDesktop() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a9a8e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+      <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+  );
+}
+function IconDanger() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
 
 /* ─────────────────────────────────────────
    CONFIRM MODAL
@@ -121,7 +187,7 @@ function ConfirmModal({ state, onCancel }: { state: ConfirmState; onCancel: () =
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 20, marginBottom: "1rem",
         }}>
-          {state.danger ? "⚠️" : "💾"}
+          {state.danger ? <IconWarning /> : <IconSave />}
         </div>
 
         <div style={{ fontSize: 15, fontWeight: 600, color: "#141410", marginBottom: 8 }}>
@@ -177,7 +243,12 @@ function Toast({ msg, type = "success" }: { msg: string; type?: "success" | "err
       boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
       animation: "toastIn 0.3s ease", zIndex: 1100,
     }}>
-      <span style={{ fontSize: 16 }}>{type === "error" ? "❌" : "✅"}</span> {msg}
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {type === "error"
+          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        }
+      </span> {msg}
       <style>{`@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
@@ -217,11 +288,56 @@ function Spinner() {
   );
 }
 
+/* ── Danger Row Component ── */
+function DangerRow({
+  title, desc, tables, btn, destructive = false, onConfirm,
+}: {
+  title:       string;
+  desc:        string;
+  tables:      string[];
+  btn:         string;
+  destructive?: boolean;
+  onConfirm:   () => void;
+}) {
+  return (
+    <div style={{ borderRadius: 8, border: "1px solid #fecaca", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "1rem", background: "#fff5f5", gap: "1rem" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: destructive ? "#dc2626" : "#141410", marginBottom: 4 }}>{title}</div>
+          <div style={{ fontSize: 12, color: "#9a9a8e", lineHeight: 1.5, marginBottom: 8 }}>{desc}</div>
+          {/* Tables affected */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {tables.map(t => (
+              <span key={t} style={{ fontSize: 10, fontFamily: "monospace", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", padding: "1px 6px", borderRadius: 4 }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={onConfirm}
+          style={{
+            padding: "8px 16px", flexShrink: 0,
+            background: destructive ? "#dc2626" : "#fff",
+            color: destructive ? "#fff" : "#dc2626",
+            border: destructive ? "none" : "1px solid #fecaca",
+            borderRadius: 8, fontSize: 12, fontWeight: 500,
+            cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit",
+          }}
+        >
+          {btn}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function AdminSettingsPage() {
   const [activeTab,  setActiveTab]  = useState<Tab>("Store");
+  const { refresh: refreshStore } = useStore();
   const [toast,      setToast]      = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [saving,     setSaving]     = useState(false);
   const [fetching,   setFetching]   = useState(true);
@@ -271,7 +387,7 @@ export default function AdminSettingsPage() {
   const fetchSettings = useCallback(async () => {
     setFetching(true);
     try {
-      const res  = await fetch("/api/settings");
+      const res  = await fetch(`/api/settings${user?.id ? `?admin_id=${user.id}` : ""}`);
       const data = await res.json();
       // Store info: prefer localStorage for user-specific fields, API for regional settings
       setStore({
@@ -302,7 +418,7 @@ export default function AdminSettingsPage() {
   const doSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...store, ...tax, ...notif }) });
+      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...store, ...tax, ...notif, admin_id: user?.id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
@@ -319,6 +435,7 @@ export default function AdminSettingsPage() {
         }));
       }
       showToast("Settings saved successfully");
+      refreshStore(); // update global currency/timezone context
     } catch (err) {
       showToast((err as Error).message || "Failed to save", "error");
     } finally { setSaving(false); }
@@ -370,10 +487,6 @@ export default function AdminSettingsPage() {
     ? user.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : "—";
 
-  const dater = new Intl.DateTimeFormat("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
-  }).format(new Date());
-
   return (
     <>
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -381,7 +494,7 @@ export default function AdminSettingsPage() {
 
       <header className="header">
         <div className="header-title">Settings</div>
-        <div className="header-date">{dater}</div>
+        <div className="header-date">{new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date())}</div>
       </header>
 
       <main className="main">
@@ -546,7 +659,10 @@ export default function AdminSettingsPage() {
                         <Toggle checked={tax.tax_inclusive} onChange={() => setTax(t => ({ ...t, tax_inclusive: !t.tax_inclusive }))} />
                       </div>
                       <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "0.75rem 1rem", fontSize: 12, color: "#1e40af" }}>
-                        💡 With {tax.tax_name || "tax"} at {tax.tax_rate || 0}%, a $100 item will show ${(100 * (1 + Number(tax.tax_rate) / 100)).toFixed(2)} at checkout.
+                        <span style={{ display: "inline-flex", alignItems: "flex-start", gap: 7 }}>
+          <span style={{ marginTop: 1, flexShrink: 0 }}><IconInfo /></span>
+          <span>With {tax.tax_name || "tax"} at {tax.tax_rate || 0}%, a 100 {store.currency} item will show {(100 * (1 + Number(tax.tax_rate) / 100)).toFixed(2)} {store.currency} at checkout.</span>
+        </span>
                       </div>
                     </div>
                   </div>
@@ -608,36 +724,130 @@ export default function AdminSettingsPage() {
             )}
 
             {/* ══ SECURITY ══ */}
-            {activeTab === "Security" && (
+            {activeTab === "Security" && (() => {
+              const strength = getPasswordStrength(security.newPassword);
+              const confirmOk = security.confirmPassword.length > 0 && security.confirmPassword === security.newPassword;
+              const confirmErr = security.confirmPassword.length > 0 && security.confirmPassword !== security.newPassword;
+              return (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+                {/* ── Change Password ── */}
                 <div style={cardStyle}>
-                  <div style={cardHeaderStyle}><span style={{ fontSize: 13, fontWeight: 500 }}>Change Password</span></div>
+                  <div style={cardHeaderStyle}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Change Password</span>
+                    <span style={{ fontSize: 11, color: "#9a9a8e" }}>Stored as bcrypt hash in the database</span>
+                  </div>
                   <div style={cardBodyStyle}>
                     <div style={sectionStyle}>
+
+                      {/* Current password */}
                       <div>
-                        <label style={labelStyle}>Current Password</label>
-                        <input style={fieldStyle} type="password" placeholder="Enter current password" value={security.currentPassword} onChange={e => setSecurity(s => ({ ...s, currentPassword: e.target.value }))} />
+                        <label style={labelStyle}>Current Password *</label>
+                        <input
+                          style={fieldStyle}
+                          type="password"
+                          placeholder="Enter your current password"
+                          value={security.currentPassword}
+                          onChange={e => setSecurity(s => ({ ...s, currentPassword: e.target.value }))}
+                        />
                       </div>
-                      <div style={rowStyle}>
-                        <div>
-                          <label style={labelStyle}>New Password</label>
-                          <input style={fieldStyle} type="password" placeholder="Min. 8 characters" value={security.newPassword} onChange={e => setSecurity(s => ({ ...s, newPassword: e.target.value }))} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>Confirm New Password</label>
-                          <input
-                            style={{ ...fieldStyle, borderColor: security.confirmPassword && security.confirmPassword !== security.newPassword ? "#dc2626" : security.confirmPassword ? "#16a34a" : "#c8c6bc" }}
-                            type="password" placeholder="Repeat new password"
-                            value={security.confirmPassword}
-                            onChange={e => setSecurity(s => ({ ...s, confirmPassword: e.target.value }))}
-                          />
+
+                      {/* New password + strength meter */}
+                      <div>
+                        <label style={labelStyle}>New Password *</label>
+                        <input
+                          style={{
+                            ...fieldStyle,
+                            borderColor: security.newPassword
+                              ? strength.color
+                              : "#c8c6bc",
+                          }}
+                          type="password"
+                          placeholder="Min. 8 characters"
+                          value={security.newPassword}
+                          onChange={e => setSecurity(s => ({ ...s, newPassword: e.target.value }))}
+                        />
+                        {/* Strength bar */}
+                        {security.newPassword && (
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                              {[1,2,3,4,5].map(i => (
+                                <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength.score ? strength.color : "#e2e0d8", transition: "background 0.2s" }} />
+                              ))}
+                            </div>
+                            <div style={{ fontSize: 11, color: strength.color, fontWeight: 500 }}>
+                              {strength.label}
+                              {strength.score < 3 && (
+                                <span style={{ color: "#9a9a8e", fontWeight: 400 }}>
+                                  {" — "}
+                                  {!/[A-Z]/.test(security.newPassword) && "add uppercase · "}
+                                  {!/[0-9]/.test(security.newPassword) && "add a number · "}
+                                  {!/[^A-Za-z0-9]/.test(security.newPassword) && "add a symbol · "}
+                                  {security.newPassword.length < 12 && "use 12+ chars"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Confirm password */}
+                      <div>
+                        <label style={labelStyle}>Confirm New Password *</label>
+                        <input
+                          style={{
+                            ...fieldStyle,
+                            borderColor: confirmErr ? "#dc2626" : confirmOk ? "#16a34a" : "#c8c6bc",
+                          }}
+                          type="password"
+                          placeholder="Repeat new password"
+                          value={security.confirmPassword}
+                          onChange={e => setSecurity(s => ({ ...s, confirmPassword: e.target.value }))}
+                        />
+                        {confirmErr && (
+                          <p style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>Passwords do not match</p>
+                        )}
+                        {confirmOk && (
+                          <p style={{ fontSize: 11, color: "#16a34a", marginTop: 4 }}>✓ Passwords match</p>
+                        )}
+                      </div>
+
+                      {/* Requirements checklist */}
+                      <div style={{ background: "#f5f4f0", borderRadius: 8, padding: "0.75rem 1rem" }}>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: "#4a4a40", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Requirements</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          {[
+                            { label: "At least 8 characters",          met: security.newPassword.length >= 8 },
+                            { label: "At least one uppercase letter",   met: /[A-Z]/.test(security.newPassword) },
+                            { label: "At least one number",             met: /[0-9]/.test(security.newPassword) },
+                            { label: "At least one special character",  met: /[^A-Za-z0-9]/.test(security.newPassword) },
+                          ].map(req => (
+                            <div key={req.label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke={req.met ? "#16a34a" : "#c8c6bc"} strokeWidth="2.5" strokeLinecap="round">
+                                {req.met
+                                  ? <><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>
+                                  : <circle cx="12" cy="12" r="10"/>
+                                }
+                              </svg>
+                              <span style={{ color: req.met ? "#16a34a" : "#9a9a8e" }}>{req.label}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
+
                       <div style={{ display: "flex", justifyContent: "flex-end" }}>
                         <button
                           onClick={handleChangePassword}
-                          disabled={saving}
-                          style={{ padding: "9px 20px", background: saving ? "#9a9a8e" : "#141410", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                          disabled={saving || !confirmOk || strength.score < 2}
+                          style={{
+                            padding: "9px 20px",
+                            background: saving || !confirmOk || strength.score < 2 ? "#9a9a8e" : "#141410",
+                            color: "#fff", border: "none", borderRadius: 8,
+                            fontSize: 13, fontWeight: 500,
+                            cursor: saving || !confirmOk || strength.score < 2 ? "not-allowed" : "pointer",
+                            fontFamily: "inherit",
+                          }}
                         >
                           {saving ? "Updating…" : "Update Password"}
                         </button>
@@ -646,119 +856,188 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
 
+                {/* ── Account Info ── */}
                 <div style={cardStyle}>
-                  <div style={cardHeaderStyle}><span style={{ fontSize: 13, fontWeight: 500 }}>Active Sessions</span></div>
+                  <div style={cardHeaderStyle}><span style={{ fontSize: 13, fontWeight: 500 }}>Account Info</span></div>
                   <div style={cardBodyStyle}>
-                    {[
-                      { device: "Chrome on Windows", location: "Nairobi, Kenya", time: "Now",         current: true  },
-                      { device: "Safari on iPhone",  location: "Nairobi, Kenya", time: "2 hours ago", current: false },
-                    ].map((s, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "0.75rem 0", borderBottom: i === 0 ? "1px solid #e2e0d8" : "none" }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f5f4f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                          {s.device.includes("iPhone") ? "📱" : "💻"}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                      {[
+                        { label: "Admin ID",    value: user?.id ?? "—",         mono: true  },
+                        { label: "Email",       value: user?.email ?? "—",      mono: false },
+                        { label: "Role",        value: user?.role ?? "admin",   mono: false },
+                        { label: "Store",       value: user?.store_name ?? "—", mono: false },
+                      ].map(row => (
+                        <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.65rem 0.85rem", background: "#f5f4f0", borderRadius: 8 }}>
+                          <span style={{ fontSize: 12, color: "#9a9a8e", textTransform: "uppercase", letterSpacing: "0.5px" } as React.CSSProperties}>{row.label}</span>
+                          <span style={{ fontSize: 13, fontWeight: 500, fontFamily: row.mono ? "monospace" : "inherit", color: "#141410", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {row.value}
+                          </span>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>{s.device}</div>
-                          <div style={{ fontSize: 12, color: "#9a9a8e" }}>{s.location} · {s.time}</div>
-                        </div>
-                        {s.current
-                          ? <span style={{ fontSize: 11, background: "#f0fdf4", color: "#16a34a", padding: "2px 8px", borderRadius: 100, fontWeight: 500 }}>Current</span>
-                          : (
-                            <button
-                              onClick={() =>
-                                openConfirm(
-                                  "Revoke Session",
-                                  `Are you sure you want to revoke the session for "${s.device}"? That device will be signed out immediately.`,
-                                  true,
-                                  () => showToast("Session revoked")
-                                )
-                              }
-                              style={{ fontSize: 12, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit" }}
-                            >
-                              Revoke
-                            </button>
-                          )
-                        }
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {/* ── Sign Out All Devices ── */}
+                <div style={cardStyle}>
+                  <div style={cardHeaderStyle}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Session</span>
+                  </div>
+                  <div style={cardBodyStyle}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>Sign out of this session</div>
+                        <div style={{ fontSize: 12, color: "#9a9a8e" }}>
+                          Clears your localStorage session and redirects to login.
+                        </div>
+                      </div>
+                      <button
+                        onClick={() =>
+                          openConfirm(
+                            "Sign Out",
+                            "Are you sure you want to sign out? You will need to log in again.",
+                            false,
+                            () => {
+                              localStorage.removeItem("user");
+                              window.location.href = "/";
+                            }
+                          )
+                        }
+                        style={{ padding: "8px 16px", background: "#f5f4f0", color: "#141410", border: "1px solid #c8c6bc", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", flexShrink: 0 }}
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
               </div>
-            )}
+              );
+            })()}
 
             {/* ══ DANGER ZONE ══ */}
             {activeTab === "Danger Zone" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+                {/* Warning banner */}
+                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "0.85rem 1.1rem", display: "flex", alignItems: "flex-start", gap: 10, fontSize: 12, color: "#7f1d1d" }}>
+                  <span style={{ marginTop: 1, flexShrink: 0 }}><IconDanger /></span>
+                  <span>The actions below are <strong>permanent and irreversible</strong>. They operate directly on your database. Make sure you know what you&apos;re doing before proceeding.</span>
+                </div>
+
                 <div style={{ ...cardStyle, border: "1px solid #fecaca" }}>
                   <div style={{ ...cardHeaderStyle, background: "#fef2f2", borderBottom: "1px solid #fecaca" }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: "#dc2626" }}>⚠ Danger Zone</span>
-                    <span style={{ fontSize: 12, color: "#dc2626" }}>These actions are irreversible</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "#dc2626", display: "inline-flex", alignItems: "center", gap: 6 }}><IconDanger /> Danger Zone</span>
+                    <span style={{ fontSize: 12, color: "#dc2626" }}>These actions write directly to the database</span>
                   </div>
                   <div style={cardBodyStyle}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 
-                      {[
-                        {
-                          title: "Clear All Sales Data",
-                          desc:  "Permanently delete all sales records and transaction history. This cannot be undone.",
-                          btn:   "Clear Sales Data",
-                          endpoint: "/api/admin/clear-sales",
-                          confirmMsg: "This will permanently delete ALL sales records and transaction history. This action cannot be reversed. Are you absolutely sure?",
-                        },
-                        {
-                          title: "Reset Inventory",
-                          desc:  "Reset all product stock levels to zero. Product listings will remain intact.",
-                          btn:   "Reset Inventory",
-                          endpoint: "/api/admin/reset-inventory",
-                          confirmMsg: "This will reset ALL product stock levels to zero. You will need to manually restock every item. Are you sure?",
-                        },
-                      ].map(({ title, desc, btn, endpoint, confirmMsg }) => (
-                        <div key={title} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem", background: "#fff5f5", borderRadius: 8, border: "1px solid #fecaca", gap: "1rem" }}>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 500 }}>{title}</div>
-                            <div style={{ fontSize: 12, color: "#9a9a8e", marginTop: 3, maxWidth: 400 }}>{desc}</div>
-                          </div>
-                          <button
-                            onClick={() =>
-                              openConfirm(title, confirmMsg, true, async () => {
-                                try {
-                                  const res = await fetch(endpoint, { method: "DELETE" });
-                                  if (!res.ok) throw new Error("Failed");
-                                  showToast(`${btn} completed`);
-                                } catch {
-                                  showToast(`${btn} failed`, "error");
-                                }
-                              })
+                      {/* ── Clear All Sales ── */}
+                      <DangerRow
+                        title="Clear All Sales Data"
+                        desc="Permanently DELETE all rows from the orders table scoped to your store. Stock movements from sales are also cleared. Customer order counts are reset to 0."
+                        tables={["orders", "stock_movements (sale type)"]}
+                        btn="Clear Sales Data"
+                        onConfirm={() =>
+                          openConfirm(
+                            "Clear All Sales Data",
+                            "This will permanently delete every order and sale record from your database. Customer totals will be reset. This CANNOT be undone.",
+                            true,
+                            async () => {
+                              if (!user?.id) return showToast("Not logged in", "error");
+                              try {
+                                const res = await fetch(`/api/admin/clear-sales?admin_id=${user.id}`, { method: "DELETE" });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                showToast(`Cleared ${data.deleted} sales records`);
+                              } catch (err) {
+                                showToast((err as Error).message || "Failed to clear sales", "error");
+                              }
                             }
-                            style={{ padding: "8px 16px", background: "#fff", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
-                          >
-                            {btn}
-                          </button>
-                        </div>
-                      ))}
+                          )
+                        }
+                      />
 
-                      {/* Delete store */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem", background: "#fff5f5", borderRadius: 8, border: "1px solid #fecaca", gap: "1rem" }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: "#dc2626" }}>Delete Store Account</div>
-                          <div style={{ fontSize: 12, color: "#9a9a8e", marginTop: 3, maxWidth: 400 }}>
-                            Permanently delete your store, all data, staff accounts, and customer records. This action cannot be reversed.
-                          </div>
-                        </div>
-                        <button
-                          onClick={() =>
-                            openConfirm(
-                              "Delete Store Account",
-                              "This will permanently delete your entire store, including all products, sales, staff accounts, and customer data. This is irreversible. Are you absolutely sure?",
-                              true,
-                              () => showToast("Store deletion scheduled")
-                            )
-                          }
-                          style={{ padding: "8px 16px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
-                        >
-                          Delete Store
-                        </button>
-                      </div>
+                      {/* ── Reset Inventory ── */}
+                      <DangerRow
+                        title="Reset Inventory"
+                        desc="Sets stock = 0 for every product in your catalogue. Product names, prices and SKUs are preserved. All stock_movements history is wiped."
+                        tables={["products.stock → 0", "stock_movements"]}
+                        btn="Reset Inventory"
+                        onConfirm={() =>
+                          openConfirm(
+                            "Reset Inventory",
+                            "This will set stock to 0 for every product and delete all stock movement history. Products themselves are preserved. Are you sure?",
+                            true,
+                            async () => {
+                              if (!user?.id) return showToast("Not logged in", "error");
+                              try {
+                                const res = await fetch(`/api/admin/reset-inventory?admin_id=${user.id}`, { method: "DELETE" });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                showToast(`Reset ${data.updated} products to 0 stock`);
+                              } catch (err) {
+                                showToast((err as Error).message || "Failed to reset inventory", "error");
+                              }
+                            }
+                          )
+                        }
+                      />
+
+                      {/* ── Delete All Customers ── */}
+                      <DangerRow
+                        title="Delete All Customers"
+                        desc="Permanently removes every customer record from your store. Orders are preserved but will show no linked customer."
+                        tables={["customers"]}
+                        btn="Delete Customers"
+                        onConfirm={() =>
+                          openConfirm(
+                            "Delete All Customers",
+                            "This will permanently delete every customer record. This cannot be undone. Orders will be preserved but unlinked.",
+                            true,
+                            async () => {
+                              if (!user?.id) return showToast("Not logged in", "error");
+                              try {
+                                const res = await fetch(`/api/admin/clear-customers?admin_id=${user.id}`, { method: "DELETE" });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                showToast(`Deleted ${data.deleted} customer records`);
+                              } catch (err) {
+                                showToast((err as Error).message || "Failed to delete customers", "error");
+                              }
+                            }
+                          )
+                        }
+                      />
+
+                      {/* ── Delete Store Account ── */}
+                      <DangerRow
+                        title="Delete Store Account"
+                        desc="Nuclear option — deletes your admin account and ALL associated data: products, orders, staff, customers, settings, and stock history."
+                        tables={["users", "staff", "products", "orders", "customers", "stock_movements", "settings"]}
+                        btn="Delete Store"
+                        destructive
+                        onConfirm={() =>
+                          openConfirm(
+                            "Delete Store Account",
+                            "This will permanently delete your admin account and every piece of data associated with it. You will be signed out immediately. THIS CANNOT BE UNDONE.",
+                            true,
+                            async () => {
+                              if (!user?.id) return showToast("Not logged in", "error");
+                              try {
+                                const res = await fetch(`/api/admin/delete-store?admin_id=${user.id}`, { method: "DELETE" });
+                                if (!res.ok) throw new Error("Failed");
+                                localStorage.removeItem("user");
+                                showToast("Store deleted. Redirecting…");
+                                setTimeout(() => { window.location.href = "/"; }, 1500);
+                              } catch (err) {
+                                showToast((err as Error).message || "Failed to delete store", "error");
+                              }
+                            }
+                          )
+                        }
+                      />
 
                     </div>
                   </div>

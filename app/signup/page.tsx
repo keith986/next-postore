@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const TAKEN = ["demo", "test", "admin", "app", "store", "shop", "postore", "mystore"];
+const TAKEN = ["demo", "test", "admin", "app", "store", "shop", "vendx", "mystore"];
 
 function slugify(v: string) {
   return v.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -185,7 +185,6 @@ export default function SignupPage() {
     checkDomain(slug);
   };
 
-
   let domainTimer: ReturnType<typeof setTimeout>;
 
   const checkDomain = (slug: string) => {
@@ -241,7 +240,7 @@ export default function SignupPage() {
           full_name:  `${form.firstName} ${form.lastName}`.trim(),
           email:      form.email,
           password:   form.password,
-          role:       "admin",       // default role on signup
+          role:       "admin",        // store owners are admins
           store_name: form.storeName,
           domain:     form.domain,
         }),
@@ -254,8 +253,9 @@ export default function SignupPage() {
         return;
       }
 
-      // Auto sign in after signup — redirect to login with success message
-      router.push("/?registered=true");
+      // Save user to localStorage and redirect to onboarding
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push("/onboarding");
 
     } catch {
       setError("Network error. Please check your connection.");
