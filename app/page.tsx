@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -182,18 +182,6 @@ const css = `
   }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .btn-google {
-    width: 100%; padding: 9px;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 8px; color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .btn-google:hover { border-color: var(--ink2); background: var(--bg); }
-
   .footer-link { text-align: center; margin-top: 1.2rem; font-size: 12px; color: var(--muted); }
   .footer-link a { color: var(--accent); font-weight: 500; text-decoration: none; }
   .footer-link a:hover { text-decoration: underline; }
@@ -206,6 +194,31 @@ const css = `
     display: flex; align-items: center; gap: 6px;
   }
 
+  /* Auto-login splash */
+  .splash {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; z-index: 50;
+  }
+  .splash-logo {
+    width: 44px; height: 44px;
+    background: var(--ink); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px; font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .splash-text { font-size: 14px; color: var(--muted); }
+  .splash-spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--ink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   @media (max-width: 700px) {
     .page-wrap { grid-template-columns: 1fr; height: auto; overflow: visible; }
     .left { display: none; }
@@ -214,43 +227,87 @@ const css = `
   }
 `;
 
-const ROLE_REDIRECT : { [key: string]: string } = {
+const ROLE_REDIRECT: { [key: string]: string } = {
   admin:  "/admin/dashboard",
   staff:  "/staff/dashboard",
   client: "/client/dashboard",
 };
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error,    setError]    = useState("");
+  const [loading,  setLoading]  = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e : React.FormEvent<HTMLFormElement>) => {
+  /* ── Check for existing session (runs synchronously before render) ── */
+  const hasSession = typeof window !== "undefined" && (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "null");
+      return !!(user?.role && ROLE_REDIRECT[user.role]);
+    } catch {
+      localStorage.removeItem("user");
+      return false;
+    }
+  })();
+
+  /* ── Redirect on mount — no setState, just router call ── */
+  useEffect(() => {
+    if (!hasSession) return;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "null");
+      if (user?.role && ROLE_REDIRECT[user.role]) {
+        router.replace(ROLE_REDIRECT[user.role]);
+      }
+    } catch {
+      localStorage.removeItem("user");
+    }
+  }, [hasSession, router]);
+
+
+  /* ── Manual login ── */
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     if (!email || !password) return setError("Please fill in all fields.");
     setLoading(true);
 
-    const res = await fetch("/api/auth/login", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ email, password }),
-                });
-    const data = await res.json();
+    try {
+      const res  = await fetch("/api/auth/login", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
 
-    localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
 
-    setTimeout(() => setLoading(false), 1500);
-
-    if (data.error) {
-      setError(data.error);
-    } else {
-      router.push(ROLE_REDIRECT[data.user.role]);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push(ROLE_REDIRECT[data.user.role] ?? "/");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
-    
   };
+
+  /* ── Show splash while redirecting ── */
+  if (hasSession) {
+    return (
+      <>
+        <style>{css}</style>
+        <div className="splash">
+          <div className="splash-logo">P</div>
+          <div className="splash-spinner" />
+          <p className="splash-text">Signing you in…</p>
+        </div>
+      </>
+    );
+  }
+
 
   return (
     <>
@@ -298,7 +355,11 @@ export default function LoginPage() {
             <h2 className="form-title">Sign in to your store</h2>
             <p className="form-sub">Enter your credentials to access your dashboard.</p>
 
-            {error && <div className="error-box"><span>⚠</span> {error}</div>}
+            {error && (
+              <div className="error-box">
+                <span>⚠</span> {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div className="field">
@@ -331,7 +392,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="divider"></div>
+            <div className="divider" />
 
             <p className="footer-link">
               Don&apos;t have an account?{" "}
