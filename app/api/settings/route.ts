@@ -2,23 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/app/_lib/db";
 
 const DEFAULTS = {
-  store_name:         "POStore",
-  domain:             "postore",
-  email:              "",
-  phone:              "",
-  address:            "",
-  currency:           "KES",
-  timezone:           "Africa/Nairobi",
-  tax_enabled:        true,
-  tax_rate:           "16",
-  tax_name:           "VAT",
-  tax_inclusive:      false,
-  receipt_footer:     "Thank you for shopping with us!",
-  notif_new_order:    true,
-  notif_low_stock:    true,
-  notif_daily_report: false,
-  notif_staff_login:  false,
-  notif_email:        "",
+  store_name:            "POStore",
+  domain:                "postore",
+  email:                 "",
+  phone:                 "",
+  address:               "",
+  currency:              "KES",
+  timezone:              "Africa/Nairobi",
+  tax_enabled:           true,
+  tax_rate:              "16",
+  tax_name:              "VAT",
+  tax_inclusive:         false,
+  receipt_footer:        "Thank you for shopping with us!",
+  notif_new_order:       true,
+  notif_low_stock:       true,
+  notif_daily_report:    false,
+  notif_staff_login:     false,
+  notif_email:           "",
+  auto_deduct_inventory: false,
 };
 
 /* ── GET /api/settings?admin_id=xxx ── */
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const admin_id = request.nextUrl.searchParams.get("admin_id");
     if (!admin_id)
-      return NextResponse.json({ ...DEFAULTS });   // unauthenticated — return defaults
+      return NextResponse.json({ ...DEFAULTS });
 
     const pool = await getPool();
 
@@ -44,8 +45,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const row = settings as Record<string, unknown>;
     return NextResponse.json({
       ...row,
-      currency: row.currency ?? "KES",
-      timezone: row.timezone ?? "Africa/Nairobi",
+      currency:              row.currency              ?? "KES",
+      timezone:              row.timezone              ?? "Africa/Nairobi",
+      auto_deduct_inventory: Boolean(row.auto_deduct_inventory ?? false),
     });
   } catch (error) {
     const err = error as Error;
@@ -70,36 +72,40 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         currency, timezone, tax_enabled, tax_rate, tax_name,
         tax_inclusive, receipt_footer,
         notif_new_order, notif_low_stock, notif_daily_report,
-        notif_staff_login, notif_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        notif_staff_login, notif_email,
+        auto_deduct_inventory
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        store_name     = VALUES(store_name),
-        domain         = VALUES(domain),
-        email          = VALUES(email),
-        phone          = VALUES(phone),
-        address        = VALUES(address),
-        currency       = VALUES(currency),
-        timezone       = VALUES(timezone),
-        tax_enabled    = VALUES(tax_enabled),
-        tax_rate       = VALUES(tax_rate),
-        tax_name       = VALUES(tax_name),
-        tax_inclusive  = VALUES(tax_inclusive),
-        receipt_footer = VALUES(receipt_footer),
-        notif_new_order    = VALUES(notif_new_order),
-        notif_low_stock    = VALUES(notif_low_stock),
-        notif_daily_report = VALUES(notif_daily_report),
-        notif_staff_login  = VALUES(notif_staff_login),
-        notif_email        = VALUES(notif_email),
-        updated_at     = NOW()
+        store_name            = VALUES(store_name),
+        domain                = VALUES(domain),
+        email                 = VALUES(email),
+        phone                 = VALUES(phone),
+        address               = VALUES(address),
+        currency              = VALUES(currency),
+        timezone              = VALUES(timezone),
+        tax_enabled           = VALUES(tax_enabled),
+        tax_rate              = VALUES(tax_rate),
+        tax_name              = VALUES(tax_name),
+        tax_inclusive         = VALUES(tax_inclusive),
+        receipt_footer        = VALUES(receipt_footer),
+        notif_new_order       = VALUES(notif_new_order),
+        notif_low_stock       = VALUES(notif_low_stock),
+        notif_daily_report    = VALUES(notif_daily_report),
+        notif_staff_login     = VALUES(notif_staff_login),
+        notif_email           = VALUES(notif_email),
+        auto_deduct_inventory = VALUES(auto_deduct_inventory),
+        updated_at            = NOW()
     `, [
       admin_id,
-      body.store_name, body.domain, body.email, body.phone, body.address,
-      body.currency, body.timezone,
-      body.tax_enabled, body.tax_rate, body.tax_name, body.tax_inclusive,
-      body.receipt_footer,
-      body.notif_new_order, body.notif_low_stock,
+      body.store_name,     body.domain,        body.email,
+      body.phone,          body.address,
+      body.currency,       body.timezone,
+      body.tax_enabled,    body.tax_rate,      body.tax_name,
+      body.tax_inclusive,  body.receipt_footer,
+      body.notif_new_order,    body.notif_low_stock,
       body.notif_daily_report, body.notif_staff_login,
       body.notif_email,
+      body.auto_deduct_inventory ? 1 : 0,
     ]);
 
     return NextResponse.json({ success: true });

@@ -9,7 +9,7 @@ export async function initDb(): Promise<void> {
     password: process.env.DB_PASSWORD || "",
   });
 
-  console.log("🔌 Connected to MySQL server...");
+  console.log(" Connected to MySQL server...");
 
   const dbName = process.env.DB_NAME || "pos_db";
 
@@ -134,33 +134,34 @@ export async function initDb(): Promise<void> {
   `);
   console.log("✅ Table: orders");
 
-  await conn.query(`
+await conn.query(`
     CREATE TABLE IF NOT EXISTS settings (
-      id                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      admin_id           CHAR(36)     NOT NULL UNIQUE,
-      store_name         VARCHAR(100) DEFAULT 'POStore',
-      domain             VARCHAR(100) DEFAULT 'postore',
-      email              VARCHAR(150) DEFAULT '',
-      phone              VARCHAR(50)  DEFAULT '',
-      address            VARCHAR(255) DEFAULT '',
-      currency           VARCHAR(10)  DEFAULT 'KES',
-      timezone           VARCHAR(60)  DEFAULT 'Africa/Nairobi',
-      tax_enabled        TINYINT(1)   DEFAULT 1,
-      tax_rate           DECIMAL(5,2) DEFAULT 16.00,
-      tax_name           VARCHAR(20)  DEFAULT 'VAT',
-      tax_inclusive      TINYINT(1)   DEFAULT 0,
-      receipt_footer     TEXT,
-      notif_new_order    TINYINT(1)   DEFAULT 1,
-      notif_low_stock    TINYINT(1)   DEFAULT 1,
-      notif_daily_report TINYINT(1)   DEFAULT 0,
-      notif_staff_login  TINYINT(1)   DEFAULT 0,
-      notif_email        VARCHAR(255) DEFAULT '',
-      updated_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      id                    INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      admin_id              CHAR(36)     NOT NULL UNIQUE,
+      store_name            VARCHAR(100) DEFAULT 'POStore',
+      domain                VARCHAR(100) DEFAULT 'postore',
+      email                 VARCHAR(150) DEFAULT '',
+      phone                 VARCHAR(50)  DEFAULT '',
+      address               VARCHAR(255) DEFAULT '',
+      currency              VARCHAR(10)  DEFAULT 'KES',
+      timezone              VARCHAR(60)  DEFAULT 'Africa/Nairobi',
+      tax_enabled           TINYINT(1)   DEFAULT 1,
+      tax_rate              DECIMAL(5,2) DEFAULT 16.00,
+      tax_name              VARCHAR(20)  DEFAULT 'VAT',
+      tax_inclusive         TINYINT(1)   DEFAULT 0,
+      receipt_footer        TEXT,
+      notif_new_order       TINYINT(1)   DEFAULT 1,
+      notif_low_stock       TINYINT(1)   DEFAULT 1,
+      notif_daily_report    TINYINT(1)   DEFAULT 0,
+      notif_staff_login     TINYINT(1)   DEFAULT 0,
+      notif_email           VARCHAR(255) DEFAULT '',
+      auto_deduct_inventory TINYINT(1)   DEFAULT 0,
+      updated_at            TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
-  `);
+`);
   console.log("✅ Table: settings");
 
-  await conn.query(`
+await conn.query(`
     CREATE TABLE IF NOT EXISTS tables (
   id                VARCHAR(36)  NOT NULL PRIMARY KEY,
   table_number      INT          NOT NULL,

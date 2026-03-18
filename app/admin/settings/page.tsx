@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/app/_lib/StoreContext";
+import InventorySettingsCard from "@/app/admin/InventorySettingsCard";
 
 /* ── Types ── */
 interface StoreSettings {
@@ -56,7 +57,7 @@ interface ConfirmState {
   onConfirm: () => void;
 }
 
-const TABS = ["Store", "Profile", "Tax & Billing", "Notifications", "Security", "Danger Zone"] as const;
+const TABS = ["Store", "Profile", "Tax & Billing", "Notifications", "Inventory", "Security", "Danger Zone"] as const;
 
 /* ── Password strength calculator ── */
 function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
@@ -341,6 +342,7 @@ export default function AdminSettingsPage() {
   const [toast,      setToast]      = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [saving,     setSaving]     = useState(false);
   const [fetching,   setFetching]   = useState(true);
+  const [inventoryMode, setInventoryMode] = useState<"auto" | "manual">("manual");
 
   /* ── Confirm modal state ── */
   const [confirm, setConfirm] = useState<ConfirmState>({
@@ -400,6 +402,7 @@ export default function AdminSettingsPage() {
         timezone:   data.timezone    ?? "Africa/Nairobi",
       });
       setTax({ tax_enabled: !!data.tax_enabled, tax_rate: String(data.tax_rate ?? "16"), tax_name: data.tax_name ?? "VAT", tax_inclusive: !!data.tax_inclusive, receipt_footer: data.receipt_footer ?? "" });
+      setInventoryMode(data.auto_deduct_inventory ? "auto" : "manual");
       setNotif({ notif_new_order: !!data.notif_new_order, notif_low_stock: !!data.notif_low_stock, notif_daily_report: !!data.notif_daily_report, notif_staff_login: !!data.notif_staff_login, notif_email: data.notif_email ?? "" });
       if (user) {
         const parts = user.full_name.split(" ");
@@ -418,7 +421,12 @@ export default function AdminSettingsPage() {
   const doSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...store, ...tax, ...notif, admin_id: user?.id }) });
+      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+                  ...store, 
+                  ...tax, 
+                  ...notif, 
+                  auto_deduct_inventory: inventoryMode === "auto" ? 1 : 0,
+                  admin_id: user?.id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
@@ -721,6 +729,19 @@ export default function AdminSettingsPage() {
                   <SaveButton onClick={handleSave} loading={saving} />
                 </div>
               </div>
+            )}
+
+             {/* ══ INVENTORY  ══ */}
+            {activeTab === "Inventory" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <InventorySettingsCard
+              inventoryMode={inventoryMode}
+              setInventoryMode={setInventoryMode}
+              />
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <SaveButton onClick={handleSave} loading={saving} />
+            </div>
+            </div>
             )}
 
             {/* ══ SECURITY ══ */}

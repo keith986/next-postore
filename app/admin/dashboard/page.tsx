@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "@/app/_lib/StoreContext";
+import WeeklyRevenueChart from "@/app/admin/WeeklyRevenueChart";
 
 /* ── Types ── */
 interface Notification {
@@ -506,27 +507,10 @@ export default function AdminDashboard() {
                 <span style={{ fontSize: 12, color: "#9a9a8e" }}>{usd(data.revenue_week)} total</span>
               </div>
               <div style={{ padding: "1.25rem" }}>
-                {weeklyRevenue.length === 0 ? (
-                  <div style={{ textAlign: "center", color: "#9a9a8e", fontSize: 13, padding: "2rem" }}>No revenue data this week.</div>
-                ) : (
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140, paddingBottom: 24, position: "relative" }}>
-                    {weeklyRevenue.map((d, i) => {
-                      const pct     = (d.revenue / maxBar) * 100;
-                      const isToday = i === weeklyRevenue.length - 1;
-                      return (
-                        <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative" }}>
-                          <div
-                            title={`${d.day}: ${usd(d.revenue)}`}
-                            style={{ width: "100%", background: isToday ? "#141410" : "#e2e0d8", borderRadius: "3px 3px 0 0", height: `${Math.max(pct, 2)}%`, transition: "height 0.4s ease", cursor: "pointer" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#141410"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isToday ? "#141410" : "#e2e0d8"; }}
-                          />
-                          <span style={{ position: "absolute", bottom: 0, fontSize: 10, color: "#9a9a8e" }}>{d.day}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                 <WeeklyRevenueChart
+                   data={data.weekly_revenue}
+                   formatCurrency={usd}
+                  />
               </div>
             </div>
 
