@@ -116,7 +116,7 @@ export default function LogoutModal({ open, onCancel, message }: LogoutModalProp
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    router.push("/login");
+    router.push("/");
   };
 
   const defaultMessage =

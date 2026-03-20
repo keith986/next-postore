@@ -21,22 +21,24 @@ export async function initDb(): Promise<void> {
 
   await conn.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id         CHAR(36)     PRIMARY KEY DEFAULT (UUID()),
-      full_name  VARCHAR(100) NOT NULL,
-      email      VARCHAR(150) NOT NULL UNIQUE,
-      password   VARCHAR(255) NOT NULL,
-      role       ENUM('admin','staff','client') DEFAULT 'client',
-      store_name VARCHAR(100),
-      domain     VARCHAR(100) UNIQUE,
-      pos_type   ENUM('retail','restaurant','salon','wholesale','pharmacy') NULL DEFAULT NULL,
-      created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+      id               CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+      full_name        VARCHAR(100) NOT NULL,
+      email            VARCHAR(150) NOT NULL UNIQUE,
+      password         VARCHAR(255) NOT NULL,
+      role             ENUM('admin','staff','client') DEFAULT 'client',
+      store_name       VARCHAR(100) NULL,
+      domain           VARCHAR(100) NULL UNIQUE,
+      pos_type         ENUM('retail','restaurant','salon','wholesale','pharmacy') NULL DEFAULT NULL,
+      subdomain_url    VARCHAR(255) NULL DEFAULT NULL,
+      subdomain_status ENUM('active','pending','failed') NULL DEFAULT NULL,
+      created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
   console.log("✅ Table: users");
 
   await conn.query(`
     CREATE TABLE IF NOT EXISTS staff (
-      id         CHAR(36)     PRIMARY KEY,
+      id         CHAR(36)     NOT NULL PRIMARY KEY,
       full_name  VARCHAR(100) NOT NULL,
       email      VARCHAR(150) NOT NULL UNIQUE,
       password   VARCHAR(255) NOT NULL,
@@ -44,7 +46,7 @@ export async function initDb(): Promise<void> {
       shift_role ENUM('staff') DEFAULT 'staff',
       status     ENUM('active','inactive') DEFAULT 'active',
       last_login TIMESTAMP    NULL DEFAULT NULL,
-      created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_admin_id (admin_id)
     )
   `);
@@ -134,7 +136,7 @@ export async function initDb(): Promise<void> {
   `);
   console.log("✅ Table: orders");
 
-await conn.query(`
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS settings (
       id                    INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
       admin_id              CHAR(36)     NOT NULL UNIQUE,
@@ -158,85 +160,82 @@ await conn.query(`
       auto_deduct_inventory TINYINT(1)   DEFAULT 0,
       updated_at            TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
-`);
+  `);
   console.log("✅ Table: settings");
 
-await conn.query(`
-    CREATE TABLE IF NOT EXISTS tables (
-  id                VARCHAR(36)  NOT NULL PRIMARY KEY,
-  table_number      INT          NOT NULL,
-  label             VARCHAR(100) NOT NULL,
-  capacity          INT          NOT NULL DEFAULT 4,
-  status            ENUM('available','occupied','reserved','cleaning') NOT NULL DEFAULT 'available',
-  section           VARCHAR(100) NOT NULL DEFAULT 'Main',
-  current_order_id  VARCHAR(36)  NULL DEFAULT NULL,
-  admin_id          VARCHAR(36)  NOT NULL,
-  updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
-  INDEX idx_admin_id (admin_id),
-  INDEX idx_status   (status),
-  INDEX idx_section  (section)
-);
-`);
-console.log("✅ Table: tables");
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS \`tables\` (
+      id               VARCHAR(36)  NOT NULL PRIMARY KEY,
+      table_number     INT          NOT NULL,
+      label            VARCHAR(100) NOT NULL,
+      capacity         INT          NOT NULL DEFAULT 4,
+      status           ENUM('available','occupied','reserved','cleaning') NOT NULL DEFAULT 'available',
+      section          VARCHAR(100) NOT NULL DEFAULT 'Main',
+      current_order_id VARCHAR(36)  NULL DEFAULT NULL,
+      admin_id         VARCHAR(36)  NOT NULL,
+      updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id (admin_id),
+      INDEX idx_status   (status),
+      INDEX idx_section  (section)
+    )
+  `);
+  console.log("✅ Table: tables");
 
-await conn.query(`
-  CREATE TABLE IF NOT EXISTS menu_items (
-  id           VARCHAR(36)   NOT NULL PRIMARY KEY,
-  name         VARCHAR(255)  NOT NULL,
-  description  TEXT          NULL,
-  category     VARCHAR(100)  NOT NULL DEFAULT 'Other',
-  price        DECIMAL(10,2) NOT NULL,
-  cost         DECIMAL(10,2) NULL,
-  calories     INT           NULL,
-  prep_time    INT           NULL,          -- minutes
-  is_available TINYINT(1)    NOT NULL DEFAULT 1,
-  is_featured  TINYINT(1)    NOT NULL DEFAULT 0,
-  tags         JSON          NULL,          -- ["Vegan","Spicy",...]
-  admin_id     VARCHAR(36)   NOT NULL,
-  created_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
-  INDEX idx_admin_id    (admin_id),
-  INDEX idx_category    (category),
-  INDEX idx_available   (is_available),
-  INDEX idx_featured    (is_featured)
-)
-`);
-console.log('✅ Table: menu_items')
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS menu_items (
+      id           VARCHAR(36)   NOT NULL PRIMARY KEY,
+      name         VARCHAR(255)  NOT NULL,
+      description  TEXT          NULL,
+      category     VARCHAR(100)  NOT NULL DEFAULT 'Other',
+      price        DECIMAL(10,2) NOT NULL,
+      cost         DECIMAL(10,2) NULL,
+      calories     INT           NULL,
+      prep_time    INT           NULL,
+      is_available TINYINT(1)    NOT NULL DEFAULT 1,
+      is_featured  TINYINT(1)    NOT NULL DEFAULT 0,
+      tags         JSON          NULL,
+      admin_id     VARCHAR(36)   NOT NULL,
+      created_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id  (admin_id),
+      INDEX idx_category  (category),
+      INDEX idx_available (is_available),
+      INDEX idx_featured  (is_featured)
+    )
+  `);
+  console.log("✅ Table: menu_items");
 
-await conn.query(`
-  CREATE TABLE IF NOT EXISTS appointments (
-  id              VARCHAR(36)   NOT NULL PRIMARY KEY,
-  client_name     VARCHAR(255)  NOT NULL,
-  client_phone    VARCHAR(50)   NULL,
-  client_email    VARCHAR(255)  NULL,
-  service_name    VARCHAR(255)  NOT NULL,
-  service_id      VARCHAR(36)   NULL,
-  staff_name      VARCHAR(255)  NULL,
-  staff_id        VARCHAR(36)   NULL,
-  date            DATE          NOT NULL,
-  start_time      TIME          NOT NULL,
-  end_time        TIME          NULL,
-  duration        INT           NOT NULL DEFAULT 60,   -- minutes
-  price           DECIMAL(10,2) NOT NULL DEFAULT 0,
-  deposit         DECIMAL(10,2) NOT NULL DEFAULT 0,
-  payment_status  ENUM('unpaid','deposit','paid')                                          NOT NULL DEFAULT 'unpaid',
-  status          ENUM('scheduled','confirmed','in_progress','completed','cancelled','no_show') NOT NULL DEFAULT 'scheduled',
-  type            ENUM('booked','walk_in')                                                 NOT NULL DEFAULT 'booked',
-  notes           TEXT          NULL,
-  admin_id        VARCHAR(36)   NOT NULL,
-  created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
- 
-  INDEX idx_admin_id  (admin_id),
-  INDEX idx_date      (date),
-  INDEX idx_status    (status),
-  INDEX idx_type      (type)
-)
-`)
-console.log('✅ Table: appointments')
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id             VARCHAR(36)   NOT NULL PRIMARY KEY,
+      client_name    VARCHAR(255)  NOT NULL,
+      client_phone   VARCHAR(50)   NULL,
+      client_email   VARCHAR(255)  NULL,
+      service_name   VARCHAR(255)  NOT NULL,
+      service_id     VARCHAR(36)   NULL,
+      staff_name     VARCHAR(255)  NULL,
+      staff_id       VARCHAR(36)   NULL,
+      date           DATE          NOT NULL,
+      start_time     TIME          NOT NULL,
+      end_time       TIME          NULL,
+      duration       INT           NOT NULL DEFAULT 60,
+      price          DECIMAL(10,2) NOT NULL DEFAULT 0,
+      deposit        DECIMAL(10,2) NOT NULL DEFAULT 0,
+      payment_status ENUM('unpaid','deposit','paid')                                              NOT NULL DEFAULT 'unpaid',
+      status         ENUM('scheduled','confirmed','in_progress','completed','cancelled','no_show') NOT NULL DEFAULT 'scheduled',
+      type           ENUM('booked','walk_in')                                                     NOT NULL DEFAULT 'booked',
+      notes          TEXT          NULL,
+      admin_id       VARCHAR(36)   NOT NULL,
+      created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_admin_id (admin_id),
+      INDEX idx_date     (date),
+      INDEX idx_status   (status),
+      INDEX idx_type     (type)
+    )
+  `);
+  console.log("✅ Table: appointments");
 
- await conn.query(`
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS services (
       id          VARCHAR(36)   NOT NULL PRIMARY KEY,
       name        VARCHAR(255)  NOT NULL,
@@ -251,15 +250,14 @@ console.log('✅ Table: appointments')
       admin_id    VARCHAR(36)   NOT NULL,
       created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
       INDEX idx_admin_id  (admin_id),
       INDEX idx_category  (category),
       INDEX idx_is_active (is_active)
     )
   `);
-  console.log('✅ Table: services');
+  console.log("✅ Table: services");
 
-   await conn.query(`
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS suppliers (
       id            VARCHAR(36)   NOT NULL PRIMARY KEY,
       name          VARCHAR(255)  NOT NULL,
@@ -279,82 +277,109 @@ console.log('✅ Table: appointments')
       admin_id      VARCHAR(36)   NOT NULL,
       created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
       INDEX idx_admin_id (admin_id),
       INDEX idx_status   (status),
       INDEX idx_category (category)
     )
   `);
-  console.log('✅ Table: suppliers');
+  console.log("✅ Table: suppliers");
 
-   await conn.query(`
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS price_tiers (
-      id               VARCHAR(36)    NOT NULL PRIMARY KEY,
-      name             VARCHAR(255)   NOT NULL,
-      description      TEXT           NULL,
+      id               VARCHAR(36)   NOT NULL PRIMARY KEY,
+      name             VARCHAR(255)  NOT NULL,
+      description      TEXT          NULL,
       discount_type    ENUM('percentage','fixed') NOT NULL DEFAULT 'percentage',
-      discount_value   DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
-      min_order_qty    INT            NOT NULL DEFAULT 0,
-      min_order_amount DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
-      customer_group   VARCHAR(100)   NOT NULL DEFAULT 'All Customers',
-      is_active        TINYINT(1)     NOT NULL DEFAULT 1,
-      priority         INT            NOT NULL DEFAULT 1,
+      discount_value   DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      min_order_qty    INT           NOT NULL DEFAULT 0,
+      min_order_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      customer_group   VARCHAR(100)  NOT NULL DEFAULT 'All Customers',
+      is_active        TINYINT(1)    NOT NULL DEFAULT 1,
+      priority         INT           NOT NULL DEFAULT 1,
       applies_to       ENUM('all','category','product') NOT NULL DEFAULT 'all',
-      category_ids     JSON           NULL,
-      product_ids      JSON           NULL,
-      valid_from       DATE           NULL,
-      valid_until      DATE           NULL,
-      admin_id         VARCHAR(36)    NOT NULL,
-      created_at       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
-      INDEX idx_admin_id      (admin_id),
-      INDEX idx_is_active     (is_active),
-      INDEX idx_customer_group(customer_group),
-      INDEX idx_priority      (priority),
-      INDEX idx_valid_until   (valid_until)
+      category_ids     JSON          NULL,
+      product_ids      JSON          NULL,
+      valid_from       DATE          NULL,
+      valid_until      DATE          NULL,
+      admin_id         VARCHAR(36)   NOT NULL,
+      created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id       (admin_id),
+      INDEX idx_is_active      (is_active),
+      INDEX idx_customer_group (customer_group),
+      INDEX idx_priority       (priority),
+      INDEX idx_valid_until    (valid_until)
     )
   `);
-  console.log('✅ Table: price_tiers');
+  console.log("✅ Table: price_tiers");
 
   await conn.query(`
     CREATE TABLE IF NOT EXISTS prescriptions (
-      id               VARCHAR(36)    NOT NULL PRIMARY KEY,
-      rx_number        VARCHAR(50)    NOT NULL UNIQUE,
-      patient_name     VARCHAR(255)   NOT NULL,
-      patient_phone    VARCHAR(50)    NULL,
-      patient_dob      DATE           NULL,
-      patient_id_no    VARCHAR(100)   NULL,
-      doctor_name      VARCHAR(255)   NOT NULL,
-      doctor_reg_no    VARCHAR(100)   NULL,
-      hospital         VARCHAR(255)   NULL,
-      items            JSON           NOT NULL,
-      status           ENUM('pending','verified','dispensed','partial','cancelled','expired')
-                                      NOT NULL DEFAULT 'pending',
-      payment_status   ENUM('unpaid','partial','paid')
-                                      NOT NULL DEFAULT 'unpaid',
-      total_amount     DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
-      amount_paid      DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
-      insurance_name   VARCHAR(255)   NULL,
-      insurance_no     VARCHAR(100)   NULL,
-      insurance_amount DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
-      issued_date      DATE           NOT NULL,
-      expiry_date      DATE           NULL,
-      dispensed_date   DATE           NULL,
-      notes            TEXT           NULL,
-      admin_id         VARCHAR(36)    NOT NULL,
-      created_at       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- 
-      INDEX idx_admin_id      (admin_id),
-      INDEX idx_status        (status),
-      INDEX idx_payment_status(payment_status),
-      INDEX idx_issued_date   (issued_date),
-      INDEX idx_expiry_date   (expiry_date),
-      INDEX idx_patient_name  (patient_name)
+      id               VARCHAR(36)   NOT NULL PRIMARY KEY,
+      rx_number        VARCHAR(50)   NOT NULL UNIQUE,
+      patient_name     VARCHAR(255)  NOT NULL,
+      patient_phone    VARCHAR(50)   NULL,
+      patient_dob      DATE          NULL,
+      patient_id_no    VARCHAR(100)  NULL,
+      doctor_name      VARCHAR(255)  NOT NULL,
+      doctor_reg_no    VARCHAR(100)  NULL,
+      hospital         VARCHAR(255)  NULL,
+      items            JSON          NOT NULL,
+      status           ENUM('pending','verified','dispensed','partial','cancelled','expired') NOT NULL DEFAULT 'pending',
+      payment_status   ENUM('unpaid','partial','paid')                                       NOT NULL DEFAULT 'unpaid',
+      total_amount     DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      amount_paid      DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      insurance_name   VARCHAR(255)  NULL,
+      insurance_no     VARCHAR(100)  NULL,
+      insurance_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+      issued_date      DATE          NOT NULL,
+      expiry_date      DATE          NULL,
+      dispensed_date   DATE          NULL,
+      notes            TEXT          NULL,
+      admin_id         VARCHAR(36)   NOT NULL,
+      created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_id       (admin_id),
+      INDEX idx_status         (status),
+      INDEX idx_payment_status (payment_status),
+      INDEX idx_issued_date    (issued_date),
+      INDEX idx_expiry_date    (expiry_date),
+      INDEX idx_patient_name   (patient_name)
     )
   `);
-  console.log('✅ Table: prescriptions');
+  console.log("✅ Table: prescriptions");
+
+  // ── SAFE MIGRATIONS (adds columns to existing tables without breaking them) ──
+
+  const migrations: { table: string; column: string; sql: string }[] = [
+    {
+      table:  "users",
+      column: "pos_type",
+      sql:    "ALTER TABLE users ADD COLUMN pos_type ENUM('retail','restaurant','salon','wholesale','pharmacy') NULL DEFAULT NULL AFTER domain",
+    },
+    {
+      table:  "users",
+      column: "subdomain_url",
+      sql:    "ALTER TABLE users ADD COLUMN subdomain_url VARCHAR(255) NULL DEFAULT NULL AFTER pos_type",
+    },
+    {
+      table:  "users",
+      column: "subdomain_status",
+      sql:    "ALTER TABLE users ADD COLUMN subdomain_status ENUM('active','pending','failed') NULL DEFAULT NULL AFTER subdomain_url",
+    },
+  ];
+
+  for (const m of migrations) {
+    const [cols] = await conn.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [dbName, m.table, m.column]
+    );
+    if ((cols as unknown[]).length === 0) {
+      await conn.query(m.sql);
+      console.log(`🔧 Migration: added ${m.table}.${m.column}`);
+    }
+  }
 
   // ── SEED DEFAULT ADMIN ───────────────────────────────
 
@@ -362,9 +387,7 @@ console.log('✅ Table: appointments')
     "SELECT id FROM users WHERE role = 'admin' LIMIT 1"
   );
 
-  const existing = rows as { id: string }[];
-
-  if (existing.length === 0) {
+  if ((rows as { id: string }[]).length === 0) {
     const hashed = await bcrypt.hash("admin123", 10);
     await conn.query(
       `INSERT INTO users (full_name, email, password, role, store_name, domain)
