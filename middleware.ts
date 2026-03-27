@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     hostname === `www.${baseDomain}` ||
     subdomain === hostname // no subdomain detected
   ) {
-    return NextResponse.next()
+    return NextResponse.next()  
   }
 
   // It's a subdomain — rewrite to /[subdomain]/...
