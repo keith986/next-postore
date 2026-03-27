@@ -21,7 +21,7 @@ export default async function TenantPage({ params }: Props) {
         <p><strong>{tenant}.upendoapps.com</strong> does not exist.</p>
         <a href="https://upendoapps.com">Go to main site</a>
       </div>
-    )   
+    )     
   }
 
   redirect('/admin/dashboard')
