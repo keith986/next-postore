@@ -126,6 +126,7 @@ interface User {
   role:      string;
   store_name: string | null;
   pos_type?: PosType;
+  domain?:    string;
 }
 
 function Icon({ type }: { type: string }) {
@@ -257,15 +258,15 @@ export default function Sidebar() {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (!stored) { router.push("/"); return; }
+    if (!stored) {  window.location.href = "https://upendoapps.com"; return; }
     try {
       const parsed = JSON.parse(stored) as User;
       if (!parsed.id || !parsed.full_name) throw new Error();
-      if (!parsed.pos_type) { router.push("/onboarding"); return; }
+      if (!parsed.pos_type) { window.location.href = `https://${parsed.domain}.upendoapps.com/onboarding`; return; }
       setUser(parsed);
     } catch {
       localStorage.removeItem("user");
-      router.push("/");
+       window.location.href = "https://upendoapps.com";
     }
   }, [router]);
 
@@ -305,8 +306,8 @@ export default function Sidebar() {
   };
 
   const isActive = (href: string) =>
-    href === "/admin/dashboard"
-      ? pathname === href || pathname === "/admin"
+    href === `https://${user?.domain}.upendoapps.com/admin/dashboard`
+      ? pathname === href || pathname === `https://${user?.domain}.upendoapps.com/admin`
       : pathname.startsWith(href);
 
   const doLogout    = () => { localStorage.removeItem("user"); window.location.href = "https://upendoapps.com"; };
