@@ -24,5 +24,5 @@ export default async function TenantPage({ params }: Props) {
     )     
   }
 
-  redirect('/admin/dashboard')
+  redirect('/admin/dashboard');
 }
