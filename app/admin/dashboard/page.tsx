@@ -407,20 +407,6 @@ export default function AdminDashboard() {
   const [fetching,  setFetching] = useState(true);
   const [error,     setError]    = useState<string | null>(null);
 
-  useEffect(() => {
-  const user = getStoredUser();
-  if (!user) {
-    // No user in localStorage — send back to main domain
-    window.location.href = "https://upendoapps.com";
-    return;
-  }
-  // Check if user belongs to this subdomain
-  const currentSubdomain = window.location.hostname.split(".")[0];
-  if (user.domain && user.domain !== currentSubdomain) {
-    // Wrong subdomain — redirect to their correct one
-    window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
-  }
-}, []);
 
   const fetchDashboard = useCallback(async () => {
     if (!adminUser?.id) return;
