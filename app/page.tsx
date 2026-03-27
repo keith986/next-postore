@@ -266,17 +266,17 @@ export default function LoginPage() {
 
 
   /* ── Manual login ── */
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setError("");
   if (!email || !password) return setError("Please fill in all fields.");
   setLoading(true);
 
   try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
+    const res  = await fetch("/api/auth/login", {
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body:    JSON.stringify({ email, password }),
     });
     const data = await res.json();
 
@@ -286,12 +286,26 @@ export default function LoginPage() {
       return;
     }
 
-    // Save user with domain info
     localStorage.setItem("user", JSON.stringify(data.user));
-    
-    // Redirect based on role
-    router.push(ROLE_REDIRECT[data.user.role] ?? "/");
-    
+
+    const user = data.user;
+
+    // Redirect admin/staff to their subdomain
+    if (user.role === "admin" && user.domain) {
+      window.location.href = `https://${user.domain}.upendoapps.com`;
+    } else if (user.role === "staff" && user.admin_id) {
+      // fetch the admin's domain then redirect
+      const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
+      const adminData = await adminRes.json();
+      if (adminData.domain) {
+        window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard`;
+      } else {
+        router.push(ROLE_REDIRECT[user.role] ?? "/");
+      }
+    } else {
+      router.push(ROLE_REDIRECT[user.role] ?? "/");
+    }
+
   } catch {
     setError("Something went wrong. Please try again.");
     setLoading(false);

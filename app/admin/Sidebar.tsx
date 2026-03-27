@@ -309,7 +309,7 @@ export default function Sidebar() {
       ? pathname === href || pathname === "/admin"
       : pathname.startsWith(href);
 
-  const doLogout    = () => { localStorage.removeItem("user"); router.push("/"); };
+  const doLogout    = () => { localStorage.removeItem("user"); window.location.href = "https://upendoapps.com"; };
   const handleLogout = () => setLogoutConfirm(true);
 
   const posType  = (user?.pos_type ?? "retail") as PosType;
