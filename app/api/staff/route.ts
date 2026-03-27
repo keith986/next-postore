@@ -50,7 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         `INSERT INTO users (id, full_name, email, password, role)
          VALUES (?, ?, ?, ?, 'staff')`,
         [id, full_name, email, hashed]
-      );
+      ); 
       */
 
       // Insert into staff table — link to admin
