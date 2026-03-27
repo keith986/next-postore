@@ -2,33 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
-  
-  // Get subdomain by removing the base domain
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'upendoapps.com'
-  const subdomain = hostname
-    .replace(`.${baseDomain}`, '')
-    .replace('www.', '')
 
-  // If it's the main domain or www, continue normally
+  // Extract subdomain
+  const subdomain = hostname.replace(`.${baseDomain}`, '')
+
+  // Skip if main domain, www, or no subdomain
   if (
     hostname === baseDomain ||
     hostname === `www.${baseDomain}` ||
-    subdomain === hostname // no subdomain detected
+    hostname === 'localhost:3000' ||
+    subdomain === hostname ||
+    subdomain === ''
   ) {
-    return NextResponse.next()  
+    return NextResponse.next()
   }
 
-  // It's a subdomain — rewrite to /[subdomain]/...
-  const url = request.nextUrl.clone()
-  const pathname = url.pathname
+  // Already rewritten — avoid double rewrite
+  const pathname = request.nextUrl.pathname
+  if (pathname.startsWith(`/${subdomain}`)) {
+    return NextResponse.next()
+  }
 
+  // Rewrite subdomain requests
+  const url = request.nextUrl.clone()
   url.pathname = `/${subdomain}${pathname}`
-  
-  return NextResponse.rewrite(url)
+
+  // Pass subdomain as header for use in pages
+  const response = NextResponse.rewrite(url)
+  response.headers.set('x-tenant', subdomain)
+  return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }

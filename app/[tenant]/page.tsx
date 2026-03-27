@@ -8,11 +8,11 @@ interface Props {
 export default async function TenantPage({ params }: Props) {
   const { tenant } = await params
   const pool = await getPool()
-  
+
   const [rows] = await pool.query(
     'SELECT * FROM users WHERE domain = ? LIMIT 1',
     [tenant]
-  ) as [{ id: string; domain: string }[], unknown]
+  ) as [{ id: string; domain: string; pos_type: string | null }[], unknown]
 
   if (!rows || rows.length === 0) {
     return (
@@ -21,8 +21,15 @@ export default async function TenantPage({ params }: Props) {
         <p><strong>{tenant}.upendoapps.com</strong> does not exist.</p>
         <a href="https://upendoapps.com">Go to main site</a>
       </div>
-    )     
+    )
   }
 
-  redirect('/admin/dashboard');
+  const user = rows[0]
+
+  // If pos_type is set, go to dashboard, otherwise onboarding
+  if (user.pos_type) {
+    redirect('/admin/dashboard')
+  } else {
+    redirect('/onboarding')
+  }
 }
