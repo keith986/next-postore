@@ -66,7 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!cpanel.success) {
       console.warn(`[Signup] Subdomain failed for "${domain}": ${cpanel.error}. Creating account anyway.`);
     }
-  
+    
     /* Create account */
     const id     = crypto.randomUUID();
     const hashed = await bcrypt.hash(password, 10);
