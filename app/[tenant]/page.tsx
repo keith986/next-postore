@@ -1,70 +1,51 @@
-'use client'
+import { getPool } from '@/app/_lib/db'
 
-import { useEffect } from 'react'
-import { useParams } from 'next/navigation'
+interface Props {
+  params: Promise<{ tenant: string }>
+}
 
-export default function TenantPage() {
-  const params = useParams()
-  const tenant = params.tenant as string
+export default async function TenantPage({ params }: Props) {
+  const { tenant } = await params
+  const pool = await getPool()
 
-  useEffect(() => {
-    const stored = localStorage.getItem('user')
+  const [rows] = await pool.query(
+    'SELECT id, full_name, email, role, store_name, domain, pos_type FROM users WHERE domain = ? LIMIT 1',
+    [tenant]
+  ) as [{ id: string; full_name: string; email: string; role: string; store_name: string | null; domain: string; pos_type: string | null }[], unknown]
 
-    if (!stored) {
-      // No user in localStorage — send to main domain
-      window.location.href = 'https://upendoapps.com'
-      return
-    }
+  if (!rows || rows.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px', fontFamily: 'sans-serif' }}>
+        <h1>Store not found</h1>
+        <p><strong>{tenant}.upendoapps.com</strong> does not exist.</p>
+        <a href="https://upendoapps.com">Go to main site</a>
+      </div>
+    )
+  }
 
-    try {
-      const user = JSON.parse(stored)
+  const user = rows[0]
 
-      // Check if this subdomain belongs to the stored user
-      if (user.domain !== tenant) {
-        // Wrong subdomain — redirect to their correct one
-        if (user.domain) {
-          window.location.href = `https://${user.domain}.upendoapps.com`
-        } else {
-          window.location.href = 'https://upendoapps.com'
-        }
-        return
-      }
+  // Inject user into localStorage then redirect
+  const userData = JSON.stringify({
+    id: user.id,
+    full_name: user.full_name,
+    email: user.email,
+    role: user.role,
+    store_name: user.store_name,
+    domain: user.domain,
+  })
 
-      // Correct subdomain — redirect based on pos_type
-      if (user.pos_type) {
-        window.location.href = '/admin/dashboard'
-      } else {
-        window.location.href = '/onboarding'
-      }
+  const redirectTo = user.pos_type ? '/admin/dashboard' : '/onboarding'
 
-    } catch {
-      localStorage.removeItem('user')
-      window.location.href = 'https://upendoapps.com'
-    }
-  }, [tenant])
-
-  // Show loading while redirecting
+  // Use a client-side script to set localStorage then redirect
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      height: '100vh', fontFamily: 'sans-serif', gap: 14
-    }}>
-      <div style={{
-        width: 44, height: 44, background: '#141410',
-        borderRadius: 10, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontSize: 18, fontWeight: 500
-      }}>P</div>
-      <div style={{
-        width: 20, height: 20,
-        border: '2px solid #e2e0d8',
-        borderTopColor: '#141410',
-        borderRadius: '50%',
-        animation: 'spin 0.7s linear infinite'
-      }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <p style={{ fontSize: 14, color: '#9a9a8e' }}>Loading your store…</p>
-    </div>
+    <html>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: `
+          localStorage.setItem('user', ${JSON.stringify(userData)});
+          window.location.href = '${redirectTo}';
+        `}} />
+      </body>
+    </html>
   )
 }
