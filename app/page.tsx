@@ -267,32 +267,36 @@ export default function LoginPage() {
 
   /* ── Manual login ── */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    if (!email || !password) return setError("Please fill in all fields.");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  if (!email || !password) return setError("Please fill in all fields.");
+  setLoading(true);
 
-    try {
-      const res  = await fetch("/api/auth/login", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
 
-      if (data.error) {
-        setError(data.error);
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
-      router.push(ROLE_REDIRECT[data.user.role] ?? "/");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    if (data.error) {
+      setError(data.error);
       setLoading(false);
+      return;
     }
-  };
+
+    // Save user with domain info
+    localStorage.setItem("user", JSON.stringify(data.user));
+    
+    // Redirect based on role
+    router.push(ROLE_REDIRECT[data.user.role] ?? "/");
+    
+  } catch {
+    setError("Something went wrong. Please try again.");
+    setLoading(false);
+  }
+};
 
   /* ── Show splash while redirecting ── */
   if (hasSession) {

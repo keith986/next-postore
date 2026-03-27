@@ -25,7 +25,9 @@ interface StaffRow extends RowDataPacket {
   shift_role: "staff";
   status:     "active" | "inactive";
   created_at: string;
+  domain:     string | null;
 }
+
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, password }: { email: string; password: string } =
@@ -37,16 +39,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const pool = await getPool();
 
-    /* ── 1. Check users table (admin / client) ── */
+    // Get the subdomain from the request host
+    const host = request.headers.get('host') || ''
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'upendoapps.com'
+    const subdomain = host.replace(`.${baseDomain}`, '')
+    const isSubdomain = subdomain !== host && subdomain !== 'www'
+
+    /* ── 1. Check users table ── */
     const [userRows] = await pool.query<UserRow[]>(
       "SELECT * FROM users WHERE email = ? LIMIT 1",
       [email]
     );
 
     if (userRows.length > 0) {
-      const user  = userRows[0];
-      const match = await bcrypt.compare(password, user.password);
+      const user = userRows[0];
 
+      // If on a subdomain, make sure this user owns it
+      if (isSubdomain && user.domain !== subdomain) {
+        return NextResponse.json(
+          { error: "This account does not belong to this store" },
+          { status: 403 }
+        );
+      }
+
+      const match = await bcrypt.compare(password, user.password);
       if (!match)
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
 
@@ -56,45 +72,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     /* ── 2. Check staff table ── */
     const [staffRows] = await pool.query<StaffRow[]>(
-      "SELECT * FROM staff WHERE email = ? LIMIT 1",
+      `SELECT s.*, u.domain 
+       FROM staff s 
+       JOIN users u ON s.admin_id = u.id 
+       WHERE s.email = ? LIMIT 1`,
       [email]
     );
 
     if (staffRows.length > 0) {
       const staff = staffRows[0];
 
+      // Staff must belong to the subdomain's admin
+      if (isSubdomain && staff.domain !== subdomain) {
+        return NextResponse.json(
+          { error: "This account does not belong to this store" },
+          { status: 403 }
+        );
+      }
+
       if (staff.status === "inactive")
-        return NextResponse.json({ error: "Your account is inactive. Contact your administrator." }, { status: 403 });
+        return NextResponse.json(
+          { error: "Your account is inactive. Contact your administrator." },
+          { status: 403 }
+        );
 
       const match = await bcrypt.compare(password, staff.password);
-
       if (!match)
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
 
-      // Update last_login
-      await pool.query(
-        "UPDATE staff SET last_login = NOW() WHERE id = ?",
-        [staff.id]
-      );
+      await pool.query("UPDATE staff SET last_login = NOW() WHERE id = ?", [staff.id]);
 
       const { password: _, ...safeStaff } = staff;
-
-      // Return with role: "staff" so the frontend redirect works
       return NextResponse.json({
         success: true,
-        user: {
-          ...safeStaff,
-          role:       "staff",
-          store_name: null,
-        },
+        user: { ...safeStaff, role: "staff", store_name: null },
       });
     }
 
-    /* ── 3. Not found in either table ── */
-    return NextResponse.json({ error: "No account found with that email" }, { status: 404 });
+    return NextResponse.json(
+      { error: "No account found with that email" },
+      { status: 404 }
+    );
 
   } catch (error) {
-    const err = error as Error;
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
