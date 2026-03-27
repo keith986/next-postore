@@ -56,7 +56,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Insert into staff table — link to admin
       await conn.query(
         `INSERT INTO staff (id, full_name, email, password, admin_id, shift_role, status)
-         VALUES (?, ?, ?, ?, ?, 'cashier', 'active')`,
+         VALUES (?, ?, ?, ?, ?, 'staff', 'active')`,
         [id, full_name, email, hashed, admin_id]
       );
 
