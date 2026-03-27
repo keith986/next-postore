@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Rewrite subdomain requests
+  // Rewrite subdomain requests  
   const url = request.nextUrl.clone()
   url.pathname = `/${subdomain}${pathname}`
 
