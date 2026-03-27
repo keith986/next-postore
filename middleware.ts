@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     subdomain === '' ||
     subdomain === 'www'
   ) {
-    return NextResponse.next()
+    return NextResponse.next()   
   }
 
   const pathname = request.nextUrl.pathname
