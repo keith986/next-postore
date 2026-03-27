@@ -44,7 +44,7 @@ const css = `
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(3px);
-    z-index: 1000;
+    z-index: 2000;
     animation: lmFadeIn 0.2s ease;
   }
 
@@ -57,7 +57,7 @@ const css = `
     border-radius: 16px;
     padding: 1.75rem;
     width: 100%; max-width: 380px;
-    z-index: 1001;
+    z-index: 2001;
     box-shadow: 0 24px 60px rgba(0,0,0,0.16);
     font-family: 'DM Sans', sans-serif;
     animation: lmSlideUp 0.22s cubic-bezier(.4,0,.2,1);

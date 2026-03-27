@@ -1,65 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/app/_lib/db";
 import bcrypt from "bcryptjs";
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-/* ─────────────────────────────────────────────────────────
-   cPanel API helper — creates a subdomain via cPanel UAPI
-   
-   Required env vars in .env.local:
-     CPANEL_HOST=yourdomain.com           (your main hosting domain)
-     CPANEL_USER=cpanelusername           (your cPanel username)
-     CPANEL_TOKEN=your_cpanel_api_token   (cPanel > Manage API Tokens)
-     NEXT_PUBLIC_BASE_DOMAIN=postore.app  (domain suffix for subdomains)
-──────────────────────────────────────────────────────────── */
+const execAsync = promisify(exec);
 
+/* ── Types ── */
 interface CpanelResult {
   success: boolean;
   error?:  string;
   url?:    string;
 }
 
-async function createCpanelSubdomain(subdomain: string): Promise<CpanelResult> {
-  const host       = process.env.CPANEL_HOST;
-  const user       = process.env.CPANEL_USER;
-  const token      = process.env.CPANEL_TOKEN;
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "postore.app";
-
-  if (!host || !user || !token) {
-    /* Skip silently in local dev if env vars not set */
-    console.warn("[Subdomain] CPANEL env vars not set — skipping subdomain creation");
-    return { success: true, url: `https://${subdomain}.${baseDomain}` };
-  }
-
+/* ── Subdomain creator ── */
+async function createSubdomain(subdomain: string): Promise<CpanelResult> {
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'upendoapps.com'
   try {
-    /* cPanel UAPI: SubDomain::addsubdomain
-       Docs: https://api.docs.cpanel.net/openapi/cpanel/operation/SubDomain-addsubdomain/
-       The document root is auto-created by cPanel under public_html */
-    const params = new URLSearchParams({
-      domain:     subdomain,   // e.g. "mystore"
-      rootdomain: baseDomain,  // e.g. "postore.app"
-      dir:        `public_html/${subdomain}`, // doc root relative to home
-    });
-
-    const res = await fetch(
-      `https://${host}:2083/execute/SubDomain/addsubdomain?${params}`,
-      { headers: { Authorization: `cpanel ${user}:${token}` } }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok || data.status === 0) {
-      const errMsg = data.errors?.[0] ?? "cPanel API error";
-      console.error("[Subdomain] cPanel error:", errMsg);
-      return { success: false, error: errMsg };
+    const { stdout, stderr } = await execAsync(
+      `sudo /usr/local/bin/create-subdomain.sh ${subdomain}`
+    )
+    if (stdout.includes('SUCCESS')) {
+      return { success: true, url: `https://${subdomain}.${baseDomain}` }
     }
-
-    return { success: true, url: `https://${subdomain}.${baseDomain}` };
-
+    return { success: false, error: stderr }
   } catch (err) {
-    console.error("[Subdomain] Network error:", (err as Error).message);
-    return { success: false, error: (err as Error).message };
+    return { success: false, error: (err as Error).message }
   }
 }
+
+
 
 /* ── POST /api/auth/signup ── */
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -89,7 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "That domain is already taken" }, { status: 409 });
 
     /* Create cPanel subdomain BEFORE writing to DB */
-    const cpanel          = await createCpanelSubdomain(domain);
+    const cpanel = await createSubdomain(domain);
     const subdomain_url   = cpanel.url    ?? null;
     const subdomain_status = cpanel.success ? "active" : "pending";
 
