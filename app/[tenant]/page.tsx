@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { getPool } from '@/app/_lib/db'
 
 interface Props {
@@ -10,9 +9,9 @@ export default async function TenantPage({ params }: Props) {
   const pool = await getPool()
 
   const [rows] = await pool.query(
-    'SELECT * FROM users WHERE domain = ? LIMIT 1',
+    'SELECT id, full_name, email, role, store_name, domain, pos_type FROM users WHERE domain = ? LIMIT 1',
     [tenant]
-  ) as [{ id: string; domain: string; pos_type: string | null }[], unknown]
+  ) as [{ id: string; full_name: string; email: string; role: string; store_name: string | null; domain: string; pos_type: string | null }[], unknown]
 
   if (!rows || rows.length === 0) {
     return (
@@ -26,10 +25,27 @@ export default async function TenantPage({ params }: Props) {
 
   const user = rows[0]
 
-  // If pos_type is set, go to dashboard, otherwise onboarding
-  if (user.pos_type) {
-    redirect('/admin/dashboard')
-  } else {
-    redirect('/onboarding')
-  }
+  // Inject user into localStorage then redirect
+  const userData = JSON.stringify({
+    id: user.id,
+    full_name: user.full_name,
+    email: user.email,
+    role: user.role,
+    store_name: user.store_name,
+    domain: user.domain,
+  })
+
+  const redirectTo = user.pos_type ? '/admin/dashboard' : '/onboarding'
+
+  // Use a client-side script to set localStorage then redirect
+  return (
+    <html>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: `
+          localStorage.setItem('user', ${JSON.stringify(userData)});
+          window.location.href = '${redirectTo}';
+        `}} />
+      </body>
+    </html>
+  )
 }
