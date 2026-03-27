@@ -20,7 +20,7 @@ export default function TenantPage() {
       const user = JSON.parse(stored)
 
       // Check if this subdomain belongs to the stored user
-      if (user.domain === tenant) {
+      if (user.domain !== tenant) {
         // Wrong subdomain — redirect to their correct one
         if (user.domain) {
           window.location.href = `https://${user.domain}.upendoapps.com`

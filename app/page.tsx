@@ -300,12 +300,10 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       if (adminData.domain) {
         window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard`;
       } else {
-        //router.push(ROLE_REDIRECT[user.role] ?? "/");
-        console.log('nothing found')
+        router.push(ROLE_REDIRECT[user.role] ?? "/");
       }
     } else {
-      console.log('not found - here')
-      //router.push(ROLE_REDIRECT[user.role] ?? "/");
+       router.push(ROLE_REDIRECT[user.role] ?? "/");
     }
 
   } catch {

@@ -258,15 +258,15 @@ export default function Sidebar() {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (!stored) {  window.location.href = "https://upendoapps.com"; return; }
+    if (!stored) {  router.push("/"); return; }
     try {
       const parsed = JSON.parse(stored) as User;
       if (!parsed.id || !parsed.full_name) throw new Error();
-      if (!parsed.pos_type) { window.location.href = `https://${parsed.domain}.upendoapps.com/onboarding`; return; }
+      if (!parsed.pos_type) { router.push('/onboarding'); return; }
       setUser(parsed);
     } catch {
       localStorage.removeItem("user");
-       window.location.href = "https://upendoapps.com";
+       router.push("/");
     }
   }, [router]);
 
@@ -306,8 +306,8 @@ export default function Sidebar() {
   };
 
   const isActive = (href: string) =>
-    href === `https://${user?.domain}.upendoapps.com/admin/dashboard`
-      ? pathname === href || pathname === `https://${user?.domain}.upendoapps.com/admin`
+    href === '/admin/dashboard'
+      ? pathname === href || pathname === '/admin'
       : pathname.startsWith(href);
 
   const doLogout    = () => { localStorage.removeItem("user"); window.location.href = "https://upendoapps.com"; };
