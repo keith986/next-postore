@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   // Already rewritten — avoid double rewrite
   const pathname = request.nextUrl.pathname
   if (pathname.startsWith(`/${subdomain}`)) {
-    return NextResponse.next()
+    return NextResponse.next() 
   }
 
   // Rewrite subdomain requests  
