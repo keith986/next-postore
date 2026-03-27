@@ -7,29 +7,29 @@ export function middleware(request: NextRequest) {
   // Extract subdomain
   const subdomain = hostname.replace(`.${baseDomain}`, '')
 
-  // Skip if main domain, www, or no subdomain
+  // Skip if main domain or no real subdomain
   if (
     hostname === baseDomain ||
     hostname === `www.${baseDomain}` ||
-    hostname === 'localhost:3000' ||
     subdomain === hostname ||
-    subdomain === ''
+    subdomain === '' ||
+    subdomain === 'www'
   ) {
     return NextResponse.next()
   }
 
-  // Already rewritten — avoid double rewrite
   const pathname = request.nextUrl.pathname
-  if (pathname.startsWith(`/${subdomain}`)) {
-    return NextResponse.next()  
+
+  // Only rewrite the ROOT path — let all other paths pass through normally
+  if (pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${subdomain}`
+    return NextResponse.rewrite(url)
   }
 
-  // Rewrite subdomain requests  
-  const url = request.nextUrl.clone()
-  url.pathname = `/${subdomain}${pathname}`
-
-  // Pass subdomain as header for use in pages
-  const response = NextResponse.rewrite(url)
+  // All other paths (/admin/*, /onboarding, etc.) pass through unchanged
+  // but inject the tenant via header so pages know which tenant this is
+  const response = NextResponse.next()
   response.headers.set('x-tenant', subdomain)
   return response
 }
