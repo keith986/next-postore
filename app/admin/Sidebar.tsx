@@ -257,18 +257,42 @@ export default function Sidebar() {
   const [logoutConfirm,   setLogoutConfirm]  = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) {  router.push("/"); return; }
-    try {
-      const parsed = JSON.parse(stored) as User;
-      if (!parsed.id || !parsed.full_name) throw new Error();
-      if (!parsed.pos_type) { router.push('/onboarding'); return; }
-      setUser(parsed);
-    } catch {
-      localStorage.removeItem("user");
-       router.push("/");
-    }
-  }, [router]);
+  const stored = localStorage.getItem("user");
+  if (!stored) { 
+    window.location.href = "https://pos.upendoapps.com";
+    return; 
+  }
+  try {
+    const parsed = JSON.parse(stored) as User;
+    if (!parsed.id || !parsed.full_name) throw new Error();
+
+    // Check subscription before allowing access
+    fetch(`/api/subscription/status?user_id=${parsed.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.active) {
+          window.location.href = "https://pos.upendoapps.com/payment";
+          return;
+        }
+        if (!parsed.pos_type) {
+          window.location.href = "https://pos.upendoapps.com/onboarding";
+          return;
+        }
+        setUser(parsed);
+      })
+      .catch(() => {
+        // Silent fail — allow access on network error
+        if (!parsed.pos_type) {
+          window.location.href = "https://pos.upendoapps.com/onboarding";
+          return;
+        }
+        setUser(parsed);
+      });
+  } catch {
+    localStorage.removeItem("user");
+    window.location.href = "https://pos.upendoapps.com";
+  }
+}, [router]);
 
   const fetchPendingCount = useCallback(async (id: string) => {
     try {
