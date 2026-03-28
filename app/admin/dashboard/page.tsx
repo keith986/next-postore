@@ -414,12 +414,6 @@ export default function AdminDashboard() {
     window.location.href = "https://upendoapps.com";
     return;
   }
-  // Check if user belongs to this subdomain
-  const currentSubdomain = window.location.hostname.split(".")[0];
-  if (user.domain && user.domain !== currentSubdomain) {
-    // Wrong subdomain — redirect to their correct one
-    window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
-  }
 }, []);
 
   const fetchDashboard = useCallback(async () => {

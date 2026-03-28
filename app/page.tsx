@@ -253,16 +253,31 @@ export default function LoginPage() {
 
   /* ── Redirect on mount — no setState, just router call ── */
   useEffect(() => {
-    if (!hasSession) return;
-    try {
-      const user = JSON.parse(localStorage.getItem("user") ?? "null");
-      if (user?.role && ROLE_REDIRECT[user.role]) {
-        router.replace(ROLE_REDIRECT[user.role]);
-      }
-    } catch {
-      localStorage.removeItem("user");
+  if (!hasSession) return;
+  try {
+    const user = JSON.parse(localStorage.getItem("user") ?? "null");
+    if (!user?.role) return;
+
+    // If admin, redirect to their subdomain
+    if (user.role === "admin" && user.domain) {
+      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+    } else if (user.role === "staff" && user.admin_id) {
+      fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.domain) {
+            window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard`;
+          } else {
+            router.replace(ROLE_REDIRECT[user.role] ?? "/");
+          }
+        });
+    } else {
+      router.replace(ROLE_REDIRECT[user.role] ?? "/");
     }
-  }, [hasSession, router]);
+  } catch {
+    localStorage.removeItem("user");
+  }
+}, [hasSession, router]);
 
 
   /* ── Manual login ── */
@@ -291,20 +306,20 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const user = data.user;
 
     // Redirect admin/staff to their subdomain
-    if (user.role === "admin" && user.domain) {
-      window.location.href = `https://${user.domain}.upendoapps.com`;
-    } else if (user.role === "staff" && user.admin_id) {
-      // fetch the admin's domain then redirect
-      const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
-      const adminData = await adminRes.json();
-      if (adminData.domain) {
-        window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard`;
-      } else {
-        router.push(ROLE_REDIRECT[user.role] ?? "/");
-      }
-    } else {
-       router.push(ROLE_REDIRECT[user.role] ?? "/");
-    }
+if (user.role === "admin" && user.domain) {
+  window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+  return;
+} else if (user.role === "staff" && user.admin_id) {
+  const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
+  const adminData = await adminRes.json();
+  if (adminData.domain) {
+    window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard`;
+    return;
+  }
+  router.push(ROLE_REDIRECT[user.role] ?? "/");
+} else {
+  router.push(ROLE_REDIRECT[user.role] ?? "/");
+}
 
   } catch {
     setError("Something went wrong. Please try again.");
