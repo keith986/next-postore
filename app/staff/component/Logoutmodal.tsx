@@ -1,27 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
-/* ─────────────────────────────────────────
-   LogoutModal
-   ─────────────────────────────────────────
-   A standalone modal shown when the user
-   clicks Sign Out anywhere in the admin/
-   settings area.
-
-   Usage:
-     import LogoutModal from "@/app/components/LogoutModal";
-
-     const [showLogout, setShowLogout] = useState(false);
-
-     <button onClick={() => setShowLogout(true)}>Sign out</button>
-     <LogoutModal open={showLogout} onCancel={() => setShowLogout(false)} />
-───────────────────────────────────────── */
 
 interface LogoutModalProps {
   open:     boolean;
   onCancel: () => void;
-  /** Optional custom message — defaults to a generic sign-out warning */
   message?: string;
 }
 
@@ -110,14 +92,14 @@ const css = `
 `;
 
 export default function LogoutModal({ open, onCancel, message }: LogoutModalProps) {
-  const router = useRouter();
 
   if (!open) return null;
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    router.push("/");
-  };
+  localStorage.removeItem("user");
+  localStorage.removeItem("read_notifs");
+  window.location.href = "https://upendoapps.com?logout=true";
+};
 
   const defaultMessage =
     "You'll be signed out of your account. Make sure any unsaved changes are saved before leaving.";
