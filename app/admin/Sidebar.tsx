@@ -256,34 +256,33 @@ export default function Sidebar() {
   const [switching,       setSwitching]      = useState(false);
   const [logoutConfirm,   setLogoutConfirm]  = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
   const stored = localStorage.getItem("user");
-  if (!stored) { 
+  if (!stored) {
     window.location.href = "https://pos.upendoapps.com";
-    return; 
+    return;
   }
   try {
     const parsed = JSON.parse(stored) as User;
     if (!parsed.id || !parsed.full_name) throw new Error();
 
-    // Check subscription before allowing access
-    fetch(`/api/subscription/status?user_id=${parsed.id}`)
+    // ── Check subdomain_status ──
+    fetch(`/api/internal/subdomain-status?subdomain=${parsed.domain}`)
       .then(r => r.json())
       .then(d => {
-        if (!d.active) {
+        if (d.status !== "active") {
           window.location.href = "https://pos.upendoapps.com/payment";
           return;
         }
         if (!parsed.pos_type) {
-          window.location.href = "https://pos.upendoapps.com/onboarding";
+          window.location.href = "/onboarding";
           return;
         }
         setUser(parsed);
       })
       .catch(() => {
-        // Silent fail — allow access on network error
         if (!parsed.pos_type) {
-          window.location.href = "https://pos.upendoapps.com/onboarding";
+          window.location.href = "/onboarding";
           return;
         }
         setUser(parsed);

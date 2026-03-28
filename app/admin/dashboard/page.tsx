@@ -429,20 +429,19 @@ useEffect(() => {
     return;
   }
 
-  // Check subscription before showing dashboard
-  fetch(`/api/subscription/status?user_id=${user.id}`)
+  // ── Check subdomain_status from DB ──
+  fetch(`/api/internal/subdomain-status?subdomain=${user.domain}`)
     .then(r => r.json())
     .then(d => {
-      if (!d.active) {
+      if (d.status !== "active") {
         window.location.href = "https://pos.upendoapps.com/payment";
         return;
       }
-      // Subscription active — allow render
       setAdminUser(user);
       setChecked(true);
     })
     .catch(() => {
-      // On network error allow access silently
+      // Fail open
       setAdminUser(user);
       setChecked(true);
     });

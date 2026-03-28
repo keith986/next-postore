@@ -334,7 +334,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     });
     const data = await res.json();
 
-    // ── Handle payment required ──
+    // ── Handle payment required from API ──
     if (res.status === 402 && data.requiresPayment) {
       localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "https://pos.upendoapps.com/payment";
@@ -351,15 +351,11 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const user = data.user;
 
     if (user.role === "admin" && user.domain) {
-      // ── Check subscription before redirecting ──
-      const subRes  = await fetch(`/api/subscription/status?user_id=${user.id}`);
-      const subData = await subRes.json();
-
-      if (!subData.active) {
+      // ── Check subdomain_status ──
+      if (user.subdomain_status !== "active") {
         window.location.href = "https://pos.upendoapps.com/payment";
         return;
       }
-
       const encoded = encodeURIComponent(JSON.stringify(data.user));
       window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
       return;
@@ -369,15 +365,11 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       const adminData = await adminRes.json();
 
       if (adminData.domain) {
-        // ── Check admin's subscription ──
-        const subRes  = await fetch(`/api/subscription/status?user_id=${user.admin_id}`);
-        const subData = await subRes.json();
-
-        if (!subData.active) {
+        // ── Check admin subdomain_status ──
+        if (adminData.subdomain_status !== "active") {
           window.location.href = "https://pos.upendoapps.com/payment";
           return;
         }
-
         const staffWithDomain = { ...data.user, domain: adminData.domain };
         localStorage.setItem("user", JSON.stringify(staffWithDomain));
         const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
