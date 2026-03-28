@@ -412,7 +412,7 @@ export default function AdminDashboard() {
   if (!user) {
     window.location.href = "https://upendoapps.com";
   }
-}, []);
+}, []);  
 
   const fetchDashboard = useCallback(async () => {
     if (!adminUser?.id) return;
