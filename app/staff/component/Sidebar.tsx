@@ -193,7 +193,8 @@ export default function Sidebar({ activeTab, setActiveTab, cartCount = 0 }: Side
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    router.push("/");
+    localStorage.removeItem("read_notifs");
+    window.location.href = "https://upendoapps.com?logout=true";
   };
 
   if (!staff) return null;
