@@ -307,6 +307,14 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       body:    JSON.stringify({ email, password }),
     });
     const data = await res.json();
+    
+    // ── Handle payment required ──
+  if (res.status === 402 && data.requiresPayment) {
+   // Save user to localStorage so payment page knows who they are
+   localStorage.setItem("user", JSON.stringify(data.user));
+   window.location.href = "https://pos.upendoapps.com/payment";
+   return;
+  }
 
     if (data.error) {
       setError(data.error);

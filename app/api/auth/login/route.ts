@@ -1,4 +1,3 @@
-// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/app/_lib/db";
 import bcrypt from "bcryptjs";
@@ -28,10 +27,12 @@ interface StaffRow extends RowDataPacket {
   domain:     string | null;
 }
 
+interface SubRow extends RowDataPacket {
+  status: string;
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const { email, password }: { email: string; password: string } =
-    await request.json();
+  const { email, password } = await request.json();
 
   if (!email || !password)
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -39,18 +40,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const pool = await getPool();
 
-    // Get the subdomain from the request host
-    const host = request.headers.get('host') || ''
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'upendoapps.com'
-    const mainApp = process.env.NEXT_PUBLIC_MAIN_APP || 'pos.upendoapps.com'
-    const subdomain = host.replace(`.${baseDomain}`, '')
-
-// Not a tenant subdomain if it's the main app, www, or pos
-const isSubdomain = 
-  subdomain !== host && 
-  subdomain !== 'www' && 
-  subdomain !== 'pos' &&  // ← add this
-  host !== mainApp 
+    const host       = request.headers.get("host") || "";
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "upendoapps.com";
+    const mainApp    = process.env.NEXT_PUBLIC_MAIN_APP    || "pos.upendoapps.com";
+    const subdomain  = host.replace(`.${baseDomain}`, "");
+    const isSubdomain =
+      subdomain !== host &&
+      subdomain !== "www" &&
+      subdomain !== "pos" &&
+      host !== mainApp;
 
     /* ── 1. Check users table ── */
     const [userRows] = await pool.query<UserRow[]>(
@@ -61,17 +59,33 @@ const isSubdomain =
     if (userRows.length > 0) {
       const user = userRows[0];
 
-      // If on a subdomain, make sure this user owns it
-      if (isSubdomain && user.domain !== subdomain) {
+      if (isSubdomain && user.domain !== subdomain)
         return NextResponse.json(
           { error: "This account does not belong to this store" },
           { status: 403 }
         );
-      }
 
       const match = await bcrypt.compare(password, user.password);
       if (!match)
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+
+      // ── Check subscription for admin ──
+      if (user.role === "admin") {
+        const [subRows] = await pool.query<SubRow[]>(
+          "SELECT status FROM subscriptions WHERE user_id = ? LIMIT 1",
+          [user.id]
+        );
+
+        const hasActiveSub = subRows.length > 0 && subRows[0].status === "active";
+
+        if (!hasActiveSub) {
+          const { password: _, ...safeUser } = user;
+          return NextResponse.json({
+            requiresPayment: true,
+            user:            safeUser,
+          }, { status: 402 });
+        }
+      }
 
       const { password: _, ...safeUser } = user;
       return NextResponse.json({ success: true, user: safeUser });
@@ -89,18 +103,30 @@ const isSubdomain =
     if (staffRows.length > 0) {
       const staff = staffRows[0];
 
-      // Staff must belong to the subdomain's admin
-      if (isSubdomain && staff.domain !== subdomain) {
+      if (isSubdomain && staff.domain !== subdomain)
         return NextResponse.json(
           { error: "This account does not belong to this store" },
           { status: 403 }
         );
-      }
 
       if (staff.status === "inactive")
         return NextResponse.json(
           { error: "Your account is inactive. Contact your administrator." },
           { status: 403 }
+        );
+
+      // ── Check admin's subscription for staff ──
+      const [subRows] = await pool.query<SubRow[]>(
+        "SELECT status FROM subscriptions WHERE user_id = ? LIMIT 1",
+        [staff.admin_id]
+      );
+
+      const hasActiveSub = subRows.length > 0 && subRows[0].status === "active";
+
+      if (!hasActiveSub)
+        return NextResponse.json(
+          { error: "Your store subscription has expired. Contact your administrator." },
+          { status: 402 }
         );
 
       const match = await bcrypt.compare(password, staff.password);

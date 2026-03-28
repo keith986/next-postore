@@ -255,7 +255,7 @@ export default function SignupPage() {
 
       // Save user to localStorage and redirect to onboarding
       localStorage.setItem("user", JSON.stringify(data.user));
-      router.push("/onboarding");
+      router.push("/payment");
 
     } catch {
       setError("Network error. Please check your connection.");

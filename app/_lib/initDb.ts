@@ -349,6 +349,55 @@ export async function initDb(): Promise<void> {
   `);
   console.log("✅ Table: prescriptions");
 
+  await conn.query(`
+  CREATE TABLE IF NOT EXISTS password_resets (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    CHAR(36) NOT NULL UNIQUE,
+  token      VARCHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_token (token),
+  INDEX idx_user_id (user_id)
+  );  
+  `);
+  console.log("✅ Table: password_resets");
+
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS mpesa_transactions (
+  id                  INT AUTO_INCREMENT PRIMARY KEY,
+  user_id             CHAR(36) NOT NULL,
+  checkout_request_id VARCHAR(100) NOT NULL UNIQUE,
+  merchant_request_id VARCHAR(100) NULL,
+  amount              DECIMAL(10,2) NOT NULL,
+  phone               VARCHAR(20) NOT NULL,
+  plan                VARCHAR(20) NOT NULL,
+  status              ENUM('pending','completed','failed','cancelled') DEFAULT 'pending',
+  mpesa_receipt       VARCHAR(50) NULL,
+  result_desc         TEXT NULL,
+  created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_id             (user_id),
+  INDEX idx_checkout_request_id (checkout_request_id)
+  );
+  `);
+  console.log("✅ Table: mpesa_transactions");
+
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  user_id            CHAR(36) NOT NULL UNIQUE,
+  plan               ENUM('starter','pro','enterprise') NOT NULL DEFAULT 'starter',
+  status             ENUM('active','expired','cancelled','pending') NOT NULL DEFAULT 'pending',
+  amount             DECIMAL(10,2) NOT NULL,
+  next_billing_date  DATE NOT NULL,
+  created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_status  (status)
+  );
+  `);
+  console.log("✅ Table: subscriptions");
+
   // ── SAFE MIGRATIONS (adds columns to existing tables without breaking them) ──
 
   const migrations: { table: string; column: string; sql: string }[] = [
