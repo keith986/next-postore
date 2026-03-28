@@ -429,22 +429,8 @@ useEffect(() => {
     return;
   }
 
-  // ── Check subdomain_status from DB ──
-  fetch(`/api/internal/subdomain-status?subdomain=${user.domain}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.status !== "active") {
-        window.location.href = "https://pos.upendoapps.com/payment";
-        return;
-      }
-      setAdminUser(user);
-      setChecked(true);
-    })
-    .catch(() => {
-      // Fail open
-      setAdminUser(user);
-      setChecked(true);
-    });
+  setAdminUser(user);
+  setChecked(true);
 }, []);
 
   const fetchDashboard = useCallback(async () => {

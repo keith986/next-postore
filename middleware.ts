@@ -5,12 +5,15 @@ export async function middleware(request: NextRequest) {
   const baseDomain = 'upendoapps.com'
   const mainApp = 'pos.upendoapps.com'
 
+  // Main app — pass through
   if (hostname === mainApp || hostname === `www.${mainApp}`) {
     return NextResponse.next()
   }
 
+  // Extract subdomain
   const subdomain = hostname.replace(`.${baseDomain}`, '')
 
+  // Skip non-tenant hostnames
   if (
     hostname === baseDomain ||
     hostname === `www.${baseDomain}` ||
@@ -24,27 +27,14 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // ── Protect admin/staff routes ──
-  if (pathname.startsWith('/admin') || pathname.startsWith('/staff')) {
-    try {
-      const checkUrl = `https://${mainApp}/api/internal/subdomain-status?subdomain=${subdomain}`
-      const res  = await fetch(checkUrl, { cache: 'no-store' })
-      const data = await res.json()
-
-      if (data.status !== 'active') {
-        return NextResponse.redirect(`https://${mainApp}/payment`)
-      }
-    } catch {
-      // Silent fail — allow through on error
-    }
-  }
-
+  // Rewrite root to tenant page
   if (pathname === '/') {
     const url = request.nextUrl.clone()
     url.pathname = `/${subdomain}`
     return NextResponse.rewrite(url)
   }
 
+  // Pass through with tenant header
   const response = NextResponse.next()
   response.headers.set('x-tenant', subdomain)
   return response

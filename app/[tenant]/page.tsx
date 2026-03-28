@@ -18,6 +18,7 @@ export default function TenantPage() {
     try {
       const user = JSON.parse(stored)
 
+      // Check if this subdomain belongs to the stored user
       if (user.domain !== tenant) {
         if (user.domain) {
           window.location.href = `https://${user.domain}.upendoapps.com`
@@ -27,31 +28,12 @@ export default function TenantPage() {
         return
       }
 
-      // ── Check subscription before redirecting to dashboard ──
-      fetch(`/api/subscription/status?user_id=${user.id}`)
-        .then(r => r.json())
-        .then(d => {
-          if (!d.active) {
-            // No active subscription — send to payment
-            window.location.href = 'https://pos.upendoapps.com/payment'
-            return
-          }
-
-          // Active subscription — redirect based on pos_type
-          if (user.pos_type) {
-            window.location.href = '/admin/dashboard'
-          } else {
-            window.location.href = '/onboarding'
-          }
-        })
-        .catch(() => {
-          // On network error fall through normally
-          if (user.pos_type) {
-            window.location.href = '/admin/dashboard'
-          } else {
-            window.location.href = '/onboarding'
-          }
-        })
+      // Correct subdomain — redirect based on pos_type
+      if (user.pos_type) {
+        window.location.href = '/admin/dashboard'
+      } else {
+        window.location.href = '/onboarding'
+      }
 
     } catch {
       localStorage.removeItem('user')
@@ -63,7 +45,7 @@ export default function TenantPage() {
     <div style={{
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      height: '100vh', fontFamily: 'sans-serif', gap: 14
+      height: '100vh', fontFamily: "'DM Sans', sans-serif", gap: 14
     }}>
       <div style={{
         width: 44, height: 44, background: '#141410',

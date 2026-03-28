@@ -1035,8 +1035,9 @@ export default function AdminSettingsPage() {
                                 const res = await fetch(`/api/admin/delete-store?admin_id=${user.id}`, { method: "DELETE" });
                                 if (!res.ok) throw new Error("Failed");
                                 localStorage.removeItem("user");
+                                localStorage.removeItem("read_notifs");
                                 showToast("Store deleted. Redirecting…");
-                                setTimeout(() => { window.location.href = "/"; }, 1500);
+                                setTimeout(() => { window.location.href = "https://pos.upendoapps.com";}, 1500);
                               } catch (err) {
                                 showToast((err as Error).message || "Failed to delete store", "error");
                               }

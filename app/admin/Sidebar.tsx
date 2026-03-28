@@ -265,28 +265,11 @@ useEffect(() => {
   try {
     const parsed = JSON.parse(stored) as User;
     if (!parsed.id || !parsed.full_name) throw new Error();
-
-    // ── Check subdomain_status ──
-    fetch(`/api/internal/subdomain-status?subdomain=${parsed.domain}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.status !== "active") {
-          window.location.href = "https://pos.upendoapps.com/payment";
-          return;
-        }
-        if (!parsed.pos_type) {
-          window.location.href = "/onboarding";
-          return;
-        }
-        setUser(parsed);
-      })
-      .catch(() => {
-        if (!parsed.pos_type) {
-          window.location.href = "/onboarding";
-          return;
-        }
-        setUser(parsed);
-      });
+    if (!parsed.pos_type) {
+      window.location.href = "/onboarding";
+      return;
+    }
+    setUser(parsed);
   } catch {
     localStorage.removeItem("user");
     window.location.href = "https://pos.upendoapps.com";

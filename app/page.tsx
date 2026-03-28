@@ -5,226 +5,64 @@ import { useRouter } from "next/navigation";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap');
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #f5f4f0;
-    --surface: #ffffff;
-    --ink: #141410;
-    --ink2: #4a4a40;
-    --muted: #9a9a8e;
-    --border: #e2e0d8;
-    --border2: #c8c6bc;
-    --accent: #d4522a;
+    --bg: #f5f4f0; --surface: #ffffff; --ink: #141410; --ink2: #4a4a40;
+    --muted: #9a9a8e; --border: #e2e0d8; --border2: #c8c6bc; --accent: #d4522a;
   }
-
   html, body { height: 100%; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    height: 100%;
-  }
-
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); height: 100%; }
   body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(0,0,0,0.032) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,0,0,0.032) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,0,0,0.032) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.032) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
   }
-
-  .page-wrap {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-    z-index: 1;
-  }
-
-  /* LEFT — sticky, never scrolls */
-  .left {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .blob {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-  }
+  .page-wrap { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; overflow: hidden; position: relative; z-index: 1; }
+  .left { background: var(--surface); border-right: 1px solid var(--border); padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; height: 100vh; overflow: hidden; position: relative; }
+  .blob { position: absolute; border-radius: 50%; pointer-events: none; }
   .blob-a { width: 300px; height: 300px; background: #fde8d8; top: -80px; right: -80px; opacity: 0.55; }
   .blob-b { width: 220px; height: 220px; background: #d1fae5; bottom: -60px; left: -60px; opacity: 0.45; }
-
-  .logo-row {
-    display: flex; align-items: center; gap: 10px;
-    position: relative; z-index: 1;
-  }
-  .logo-mark {
-    width: 34px; height: 34px;
-    background: var(--ink);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 13px; font-weight: 500;
-  }
+  .logo-row { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+  .logo-mark { width: 34px; height: 34px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 500; }
   .logo-name { font-weight: 500; font-size: 15px; }
-
   .hero { position: relative; z-index: 1; }
-  .hero-eyebrow {
-    font-size: 11px; font-weight: 500;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 10px;
-  }
-  .hero-title {
-    font-size: 28px; font-weight: 500;
-    line-height: 1.2; margin-bottom: 12px;
-  }
-  .hero-body {
-    font-size: 13px; color: var(--muted);
-    line-height: 1.65; max-width: 260px;
-  }
-
+  .hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .hero-title { font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 12px; }
+  .hero-body { font-size: 13px; color: var(--muted); line-height: 1.65; max-width: 260px; }
   .stats { display: flex; gap: 1.5rem; position: relative; z-index: 1; }
   .stat { border-left: 2px solid var(--border); padding-left: 12px; }
   .stat-num { font-size: 20px; font-weight: 500; }
   .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-  /* RIGHT — scrollable */
-  .right {
-    overflow-y: auto;
-    height: 100vh;
-    background: var(--bg);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 0 2.5rem;
-  }
-
-  .form-card {
-    width: 100%;
-    max-width: 340px;
-    padding: 3rem 0;
-  }
-
-  .form-eyebrow {
-    font-size: 11px; font-weight: 500;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 6px;
-  }
+  .right { overflow-y: auto; height: 100vh; background: var(--bg); display: flex; align-items: flex-start; justify-content: center; padding: 0 2.5rem; }
+  .form-card { width: 100%; max-width: 340px; padding: 3rem 0; }
+  .form-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
   .form-title { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
   .form-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.8rem; line-height: 1.5; }
-
   .field { margin-bottom: 14px; }
-  .field-meta {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 5px;
-  }
-  .field label, .f-label {
-    display: block;
-    font-size: 11px; font-weight: 500;
-    letter-spacing: 0.5px; text-transform: uppercase;
-    color: var(--ink2); margin-bottom: 5px;
-  }
+  .field-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .field label, .f-label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ink2); margin-bottom: 5px; }
   .field-meta label { margin-bottom: 0; }
-
-  .field input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 9px 12px;
-    color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px; outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
+  .field input { width: 100%; background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 9px 12px; color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   .field input::placeholder { color: var(--muted); }
-  .field input:focus {
-    border-color: var(--ink);
-    box-shadow: 0 0 0 3px rgba(20,20,16,0.07);
-  }
-
-  .forgot {
-    font-size: 12px; color: #1e40af;
-    text-decoration: none;
-  }
+  .field input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(20,20,16,0.07); }
+  .forgot { font-size: 12px; color: #1e40af; text-decoration: none; }
   .forgot:hover { text-decoration: underline; }
-
-  .btn-primary {
-    width: 100%; padding: 10px;
-    background: var(--ink); color: #fff;
-    border: none; border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px; font-weight: 500;
-    cursor: pointer; margin-top: 6px;
-    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-  }
+  .btn-primary { width: 100%; padding: 10px; background: var(--ink); color: #fff; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 6px; transition: background 0.15s, transform 0.1s, box-shadow 0.15s; }
   .btn-primary:hover { background: #2a2a22; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(20,20,16,0.18); }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  .divider {
-    display: flex; align-items: center; gap: 10px;
-    margin: 16px 0; font-size: 12px; color: var(--muted);
-  }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; font-size: 12px; color: var(--muted); }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
   .footer-link { text-align: center; margin-top: 1.2rem; font-size: 12px; color: var(--muted); }
   .footer-link a { color: var(--accent); font-weight: 500; text-decoration: none; }
   .footer-link a:hover { text-decoration: underline; }
-
-  .error-box {
-    background: #fef2f2; border: 1px solid #fecaca;
-    color: #991b1b; border-radius: 8px;
-    padding: 9px 12px; font-size: 13px;
-    margin-bottom: 14px;
-    display: flex; align-items: center; gap: 6px;
-  }
-
-  /* Auto-login splash */
-  .splash {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 14px; z-index: 50;
-  }
-  .splash-logo {
-    width: 44px; height: 44px;
-    background: var(--ink); border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 18px; font-weight: 500;
-    margin-bottom: 4px;
-  }
+  .error-box { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .splash { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 50; }
+  .splash-logo { width: 44px; height: 44px; background: var(--ink); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 500; margin-bottom: 4px; }
   .splash-text { font-size: 14px; color: var(--muted); }
-  .splash-spinner {
-    width: 20px; height: 20px;
-    border: 2px solid var(--border);
-    border-top-color: var(--ink);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
+  .splash-spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  @media (max-width: 700px) {
-    .page-wrap { grid-template-columns: 1fr; height: auto; overflow: visible; }
-    .left { display: none; }
-    .right { height: auto; padding: 2rem 1.25rem; }
-    .form-card { padding: 2rem 0; }
-  }
+  @media (max-width: 700px) { .page-wrap { grid-template-columns: 1fr; height: auto; overflow: visible; } .left { display: none; } .right { height: auto; padding: 2rem 1.25rem; } .form-card { padding: 2rem 0; } }
 `;
 
 const ROLE_REDIRECT: { [key: string]: string } = {
@@ -240,154 +78,116 @@ export default function LoginPage() {
   const [loading,  setLoading]  = useState(false);
   const router = useRouter();
 
-  // ── Handle logout FIRST — must run before hasSession ──
-if (typeof window !== "undefined") {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("logout") === "true") {
-    localStorage.removeItem("user");
-    localStorage.removeItem("read_notifs");
-    window.history.replaceState({}, "", window.location.pathname);
+  // ── Handle logout FIRST — synchronous before hasSession ──
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logout") === "true") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("read_notifs");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }
-}
 
-/* ── Check for existing session (runs synchronously before render) ── */
-const hasSession = typeof window !== "undefined" && (() => {
-  try {
-    const user = JSON.parse(localStorage.getItem("user") ?? "null");
-    return !!(user?.role && ROLE_REDIRECT[user.role]);
-  } catch {
-    localStorage.removeItem("user");
-    return false;
-  }
-})();
+  // ── Check for existing session ──
+  const hasSession = typeof window !== "undefined" && (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "null");
+      return !!(user?.role && ROLE_REDIRECT[user.role]);
+    } catch {
+      localStorage.removeItem("user");
+      return false;
+    }
+  })();
 
-  /* ── Redirect on mount — no setState, just router call ── */
-useEffect(() => {
-  if (!hasSession) return;
-  try {
-    const user = JSON.parse(localStorage.getItem("user") ?? "null");
-    if (!user?.role) return;
+  // ── Redirect if session exists ──
+  useEffect(() => {
+    if (!hasSession) return;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "null");
+      if (!user?.role) return;
 
-    if (user.role === "admin" && user.domain) {
-      // Check subscription first
-      fetch(`/api/subscription/status?user_id=${user.id}`)
-        .then(r => r.json())
-        .then(d => {
-          if (!d.active) {
-            router.replace("/payment");
-            return;
-          }
-          const encoded = encodeURIComponent(JSON.stringify(user));
-          window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-        })
-        .catch(() => {
-          const encoded = encodeURIComponent(JSON.stringify(user));
-          window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-        });
+      if (user.role === "admin" && user.domain) {
+        const encoded = encodeURIComponent(JSON.stringify(user));
+        window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
 
-    } else if (user.role === "staff" && user.admin_id) {
-      fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
-        .then(r => r.json())
-        .then(d => {
-          if (!d.domain) {
-            router.replace(ROLE_REDIRECT[user.role] ?? "/");
-            return;
-          }
-          // Check admin's subscription
-          return fetch(`/api/subscription/status?user_id=${user.admin_id}`)
-            .then(r => r.json())
-            .then(sub => {
-              if (!sub.active) {
-                router.replace("/payment");
-                return;
-              }
+      } else if (user.role === "staff" && user.admin_id) {
+        fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.domain) {
               const staffWithDomain = { ...user, domain: d.domain };
               localStorage.setItem("user", JSON.stringify(staffWithDomain));
               const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
               window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
-            });
-        })
-        .catch(() => {
-          router.replace(ROLE_REDIRECT[user.role] ?? "/");
-        });
-    } else {
-      router.replace(ROLE_REDIRECT[user.role] ?? "/");
+            } else {
+              router.replace(ROLE_REDIRECT[user.role] ?? "/");
+            }
+          })
+          .catch(() => router.replace(ROLE_REDIRECT[user.role] ?? "/"));
+      } else {
+        router.replace(ROLE_REDIRECT[user.role] ?? "/");
+      }
+    } catch {
+      localStorage.removeItem("user");
     }
-  } catch {
-    localStorage.removeItem("user");
-  }
-}, [hasSession, router]);
+  }, [hasSession, router]);
 
+  // ── Manual login ──
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    if (!email || !password) return setError("Please fill in all fields.");
+    setLoading(true);
 
-  /* ── Manual login ── */
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError("");
-  if (!email || !password) return setError("Please fill in all fields.");
-  setLoading(true);
+    try {
+      const res  = await fetch("/api/auth/login", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
 
-  try {
-    const res  = await fetch("/api/auth/login", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-
-    // ── Handle payment required from API ──
-    if (res.status === 402 && data.requiresPayment) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "https://pos.upendoapps.com/payment";
-      return;
-    }
-
-    if (data.error) {
-      setError(data.error);
-      setLoading(false);
-      return;
-    }
-
-    localStorage.setItem("user", JSON.stringify(data.user));
-    const user = data.user;
-
-    if (user.role === "admin" && user.domain) {
-      // ── Check subdomain_status ──
-      if (user.subdomain_status !== "active") {
-        window.location.href = "https://pos.upendoapps.com/payment";
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
         return;
       }
-      const encoded = encodeURIComponent(JSON.stringify(data.user));
-      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-      return;
 
-    } else if (user.role === "staff" && user.admin_id) {
-      const adminRes  = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
-      const adminData = await adminRes.json();
+      localStorage.setItem("user", JSON.stringify(data.user));
+      const user = data.user;
 
-      if (adminData.domain) {
-        // ── Check admin subdomain_status ──
-        if (adminData.subdomain_status !== "active") {
-          window.location.href = "https://pos.upendoapps.com/payment";
+      // ── Admin ──
+      if (user.role === "admin" && user.domain) {
+        const encoded = encodeURIComponent(JSON.stringify(data.user));
+        window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+        return;
+      }
+
+      // ── Staff ──
+      if (user.role === "staff" && user.admin_id) {
+        const adminRes  = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
+        const adminData = await adminRes.json();
+        if (adminData.domain) {
+          const staffWithDomain = { ...data.user, domain: adminData.domain };
+          localStorage.setItem("user", JSON.stringify(staffWithDomain));
+          const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
+          window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
           return;
         }
-        const staffWithDomain = { ...data.user, domain: adminData.domain };
-        localStorage.setItem("user", JSON.stringify(staffWithDomain));
-        const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
-        window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
+        router.push(ROLE_REDIRECT[user.role] ?? "/");
         return;
       }
+
+      // ── Client ──
       router.push(ROLE_REDIRECT[user.role] ?? "/");
-    } else {
-      router.push(ROLE_REDIRECT[user.role] ?? "/");
+
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
+  };
 
-  } catch {
-    setError("Something went wrong. Please try again.");
-    setLoading(false);
-  }
-};
-
-  /* ── Show splash while redirecting ── */
+  // ── Splash while redirecting ──
   if (hasSession) {
     return (
       <>
@@ -410,20 +210,18 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         <div className="left">
           <div className="blob blob-a" />
           <div className="blob blob-b" />
-
           <div className="logo-row">
             <div className="logo-mark">P</div>
             <span className="logo-name">POStore</span>
           </div>
-
           <div className="hero">
             <p className="hero-eyebrow">Point of sale</p>
             <h1 className="hero-title">Sell smarter,<br />grow faster.</h1>
             <p className="hero-body">
-              Complete POS for modern retailers. Manage inventory, process payments, and track every transaction in real time.
+              Complete POS for modern retailers. Manage inventory, process payments,
+              and track every transaction in real time.
             </p>
           </div>
-
           <div className="stats">
             <div className="stat">
               <div className="stat-num">--</div>
@@ -464,7 +262,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   autoComplete="email"
                 />
               </div>
-
               <div className="field">
                 <div className="field-meta">
                   <label>Password</label>
@@ -478,7 +275,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   autoComplete="current-password"
                 />
               </div>
-
               <button className="btn-primary" type="submit" disabled={loading}>
                 {loading ? "Signing in…" : "Sign in →"}
               </button>
