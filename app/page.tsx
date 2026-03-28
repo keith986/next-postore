@@ -251,6 +251,16 @@ export default function LoginPage() {
     }
   })();
 
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logout") === "true") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("read_notifs");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [])
+
   /* ── Redirect on mount — no setState, just router call ── */
  useEffect(() => {
   if (!hasSession) return;

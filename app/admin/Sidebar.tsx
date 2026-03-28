@@ -310,7 +310,7 @@ export default function Sidebar() {
       ? pathname === href || pathname === '/admin'
       : pathname.startsWith(href);
 
-  const doLogout    = () => { localStorage.removeItem("user"); localStorage.removeItem("read_notifs"); window.location.href = "https://upendoapps.com"; };
+  const doLogout    = () => { localStorage.removeItem("user"); localStorage.removeItem("read_notifs"); window.location.href = "https://upendoapps.com?logout=true"; };
   const handleLogout = () => setLogoutConfirm(true);
 
   const posType  = (user?.pos_type ?? "retail") as PosType;
