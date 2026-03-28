@@ -174,7 +174,6 @@ const sidebarCss = `
    SIDEBAR COMPONENT
 ───────────────────────────────────────── */
 export default function Sidebar({ activeTab, setActiveTab, cartCount = 0 }: SidebarProps) {
-  const router = useRouter();
   const staff  = getStoredStaff();
 
   const [admin,        setAdmin]        = useState<AdminInfo | null>(null);
@@ -194,7 +193,7 @@ export default function Sidebar({ activeTab, setActiveTab, cartCount = 0 }: Side
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("read_notifs");
-    window.location.href = "https://upendoapps.com?logout=true";
+    window.location.href = "https://pos.upendoapps.com?logout=true";
   };
 
   if (!staff) return null;

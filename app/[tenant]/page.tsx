@@ -12,7 +12,7 @@ export default function TenantPage() {
 
     if (!stored) {
       // No user in localStorage — send to main domain
-      window.location.href = 'https://upendoapps.com'
+      window.location.href = 'https://pos.upendoapps.com'
       return
     }
 
@@ -25,7 +25,7 @@ export default function TenantPage() {
         if (user.domain) {
           window.location.href = `https://${user.domain}.upendoapps.com`
         } else {
-          window.location.href = 'https://upendoapps.com'
+          window.location.href = 'https://pos.upendoapps.com'
         }
         return
       }
@@ -39,7 +39,8 @@ export default function TenantPage() {
 
     } catch {
       localStorage.removeItem('user')
-      window.location.href = 'https://upendoapps.com'
+      localStorage.removeItem('read_notifs')
+      window.location.href = 'https://pos.upendoapps.com?logout=true'
     }
   }, [tenant])
 

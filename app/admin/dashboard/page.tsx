@@ -419,7 +419,7 @@ export default function AdminDashboard() {
       // Clean URL without reloading
       window.history.replaceState({}, "", window.location.pathname);
     } catch {
-      window.location.href = "https://upendoapps.com";
+      window.location.href = "https://pos.upendoapps.com";
       return;
     }
   }
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
   // Now check localStorage
   const user = getStoredUser();
   if (!user) {
-    window.location.href = "https://upendoapps.com";
+    window.location.href = "https://pos.upendoapps.com";
   }
   }, []); 
 
