@@ -272,17 +272,19 @@ const hasSession = typeof window !== "undefined" && (() => {
       const encoded = encodeURIComponent(JSON.stringify(user));
       window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
     } else if (user.role === "staff" && user.admin_id) {
-      fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.domain) {
-            const encoded = encodeURIComponent(JSON.stringify(user));
-            window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
-          } else {
-            router.replace(ROLE_REDIRECT[user.role] ?? "/");
-          }
-        });
-    } else {
+  fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.domain) {
+        const staffWithDomain = { ...user, domain: d.domain };
+        localStorage.setItem("user", JSON.stringify(staffWithDomain));
+        const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
+        window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
+      } else {
+        router.replace(ROLE_REDIRECT[user.role] ?? "/");
+      }
+    });
+  } else {
       router.replace(ROLE_REDIRECT[user.role] ?? "/");
     }
   } catch {
@@ -325,7 +327,10 @@ if (user.role === "admin" && user.domain) {
   const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
   const adminData = await adminRes.json();
   if (adminData.domain) {
-    const encoded = encodeURIComponent(JSON.stringify(data.user));
+    // Add domain to staff user object so subdomain checks work
+    const staffWithDomain = { ...data.user, domain: adminData.domain };
+    localStorage.setItem("user", JSON.stringify(staffWithDomain));
+    const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
     window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
     return;
   }
@@ -353,7 +358,6 @@ if (user.role === "admin" && user.domain) {
       </>
     );
   }
-
 
   return (
     <>

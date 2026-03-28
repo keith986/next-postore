@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Sidebar from "@/app/staff/component/Sidebar";
 import staffCss from "@/app/staff/component/staffStyles";
 import StaffSettingsTab from "@/app/staff/component/StaffSettingsTab";
@@ -57,12 +56,6 @@ interface StoreSettings {
   tax_name:      string;
   tax_inclusive: boolean;
   currency:      string;
-}
-
-function getStoredStaff(): StoredStaff | null {
-  if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem("user") ?? "null"); }
-  catch { return null; }
 }
 
 function formatCurrency(n: number, currency = "KES"): string {
@@ -172,8 +165,8 @@ const SearchIcon = () => (
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function StaffDashboard() {
-  const router = useRouter();
-  const staff  = getStoredStaff();
+  const [staff,  setStaff]  = useState<StoredStaff | null>(null); 
+  const [ready,  setReady]  = useState(false);
 
   const [activeTab,   setActiveTab]   = useState("Dashboard");
   const [products,    setProducts]    = useState<Product[]>([]);
@@ -188,9 +181,40 @@ export default function StaffDashboard() {
   const [toast,       setToast]       = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   /* ── Guard ── */
-  useEffect(() => {
-    if (!staff || staff.role !== "staff") router.replace("/login");
-  }, [staff, router]);
+  /* ── Read session from URL if coming from cross-domain redirect ── */
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const sessionParam = params.get("session");
+
+  if (sessionParam) {
+    try {
+      const user = JSON.parse(decodeURIComponent(sessionParam));
+      localStorage.setItem("user", JSON.stringify(user));
+      window.history.replaceState({}, "", window.location.pathname);
+    } catch {
+      window.location.href = "https://upendoapps.com";
+      return;
+    }
+  }
+
+  const stored = localStorage.getItem("user");
+  if (!stored) {
+    window.location.href = "https://upendoapps.com";
+    return;
+  }
+
+  try {
+    const user = JSON.parse(stored);
+    if (!user || user.role !== "staff") {
+      window.location.href = "https://upendoapps.com";
+      return;
+    }
+    setStaff(user); // ← set staff from localStorage
+    setReady(true); // ← mark as ready
+  } catch {
+    window.location.href = "https://upendoapps.com";
+  }
+}, []);
 
   const showToast = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3500);
@@ -317,7 +341,7 @@ export default function StaffDashboard() {
   const shiftTotal  = sales.reduce((s, r) => s + r.total, 0);
   const lowStockCt  = products.filter(p => p.stock > 0 && p.stock <= 8).length;
 
-  if (!staff) return null;
+  if (!ready || !staff) return null;
 
   const dater = new Intl.DateTimeFormat("en-US", {
     weekday: "short", day: "numeric", month: "short", year: "numeric",
