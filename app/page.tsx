@@ -262,29 +262,55 @@ const hasSession = typeof window !== "undefined" && (() => {
 })();
 
   /* ── Redirect on mount — no setState, just router call ── */
- useEffect(() => {
+useEffect(() => {
   if (!hasSession) return;
   try {
     const user = JSON.parse(localStorage.getItem("user") ?? "null");
     if (!user?.role) return;
 
     if (user.role === "admin" && user.domain) {
-      const encoded = encodeURIComponent(JSON.stringify(user));
-      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+      // Check subscription first
+      fetch(`/api/subscription/status?user_id=${user.id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (!d.active) {
+            router.replace("/payment");
+            return;
+          }
+          const encoded = encodeURIComponent(JSON.stringify(user));
+          window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+        })
+        .catch(() => {
+          const encoded = encodeURIComponent(JSON.stringify(user));
+          window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+        });
+
     } else if (user.role === "staff" && user.admin_id) {
-  fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.domain) {
-        const staffWithDomain = { ...user, domain: d.domain };
-        localStorage.setItem("user", JSON.stringify(staffWithDomain));
-        const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
-        window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
-      } else {
-        router.replace(ROLE_REDIRECT[user.role] ?? "/");
-      }
-    });
-  } else {
+      fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (!d.domain) {
+            router.replace(ROLE_REDIRECT[user.role] ?? "/");
+            return;
+          }
+          // Check admin's subscription
+          return fetch(`/api/subscription/status?user_id=${user.admin_id}`)
+            .then(r => r.json())
+            .then(sub => {
+              if (!sub.active) {
+                router.replace("/payment");
+                return;
+              }
+              const staffWithDomain = { ...user, domain: d.domain };
+              localStorage.setItem("user", JSON.stringify(staffWithDomain));
+              const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
+              window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
+            });
+        })
+        .catch(() => {
+          router.replace(ROLE_REDIRECT[user.role] ?? "/");
+        });
+    } else {
       router.replace(ROLE_REDIRECT[user.role] ?? "/");
     }
   } catch {
@@ -307,14 +333,13 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       body:    JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    
+
     // ── Handle payment required ──
-  if (res.status === 402 && data.requiresPayment) {
-   // Save user to localStorage so payment page knows who they are
-   localStorage.setItem("user", JSON.stringify(data.user));
-   window.location.href = "https://pos.upendoapps.com/payment";
-   return;
-  }
+    if (res.status === 402 && data.requiresPayment) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.location.href = "https://pos.upendoapps.com/payment";
+      return;
+    }
 
     if (data.error) {
       setError(data.error);
@@ -323,29 +348,46 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     }
 
     localStorage.setItem("user", JSON.stringify(data.user));
-
     const user = data.user;
 
-// Redirect admin/staff to their subdomain
-if (user.role === "admin" && user.domain) {
-  const encoded = encodeURIComponent(JSON.stringify(data.user));
-  window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-  return;
-} else if (user.role === "staff" && user.admin_id) {
-  const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
-  const adminData = await adminRes.json();
-  if (adminData.domain) {
-    // Add domain to staff user object so subdomain checks work
-    const staffWithDomain = { ...data.user, domain: adminData.domain };
-    localStorage.setItem("user", JSON.stringify(staffWithDomain));
-    const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
-    window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
-    return;
-  }
-  router.push(ROLE_REDIRECT[user.role] ?? "/");
-} else {
-  router.push(ROLE_REDIRECT[user.role] ?? "/");
-}
+    if (user.role === "admin" && user.domain) {
+      // ── Check subscription before redirecting ──
+      const subRes  = await fetch(`/api/subscription/status?user_id=${user.id}`);
+      const subData = await subRes.json();
+
+      if (!subData.active) {
+        window.location.href = "https://pos.upendoapps.com/payment";
+        return;
+      }
+
+      const encoded = encodeURIComponent(JSON.stringify(data.user));
+      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+      return;
+
+    } else if (user.role === "staff" && user.admin_id) {
+      const adminRes  = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
+      const adminData = await adminRes.json();
+
+      if (adminData.domain) {
+        // ── Check admin's subscription ──
+        const subRes  = await fetch(`/api/subscription/status?user_id=${user.admin_id}`);
+        const subData = await subRes.json();
+
+        if (!subData.active) {
+          window.location.href = "https://pos.upendoapps.com/payment";
+          return;
+        }
+
+        const staffWithDomain = { ...data.user, domain: adminData.domain };
+        localStorage.setItem("user", JSON.stringify(staffWithDomain));
+        const encoded = encodeURIComponent(JSON.stringify(staffWithDomain));
+        window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
+        return;
+      }
+      router.push(ROLE_REDIRECT[user.role] ?? "/");
+    } else {
+      router.push(ROLE_REDIRECT[user.role] ?? "/");
+    }
 
   } catch {
     setError("Something went wrong. Please try again.");
