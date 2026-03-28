@@ -252,21 +252,22 @@ export default function LoginPage() {
   })();
 
   /* ── Redirect on mount — no setState, just router call ── */
-  useEffect(() => {
+ useEffect(() => {
   if (!hasSession) return;
   try {
     const user = JSON.parse(localStorage.getItem("user") ?? "null");
     if (!user?.role) return;
 
-    // If admin, redirect to their subdomain
     if (user.role === "admin" && user.domain) {
-      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+      const encoded = encodeURIComponent(JSON.stringify(user));
+      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
     } else if (user.role === "staff" && user.admin_id) {
       fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
         .then(r => r.json())
         .then(d => {
           if (d.domain) {
-            window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard`;
+            const encoded = encodeURIComponent(JSON.stringify(user));
+            window.location.href = `https://${d.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
           } else {
             router.replace(ROLE_REDIRECT[user.role] ?? "/");
           }
@@ -305,15 +306,17 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     const user = data.user;
 
-    // Redirect admin/staff to their subdomain
+// Redirect admin/staff to their subdomain
 if (user.role === "admin" && user.domain) {
-  window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+  const encoded = encodeURIComponent(JSON.stringify(data.user));
+  window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
   return;
 } else if (user.role === "staff" && user.admin_id) {
   const adminRes = await fetch(`/api/admin-domain?admin_id=${user.admin_id}`);
   const adminData = await adminRes.json();
   if (adminData.domain) {
-    window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard`;
+    const encoded = encodeURIComponent(JSON.stringify(data.user));
+    window.location.href = `https://${adminData.domain}.upendoapps.com/staff/dashboard?session=${encoded}`;
     return;
   }
   router.push(ROLE_REDIRECT[user.role] ?? "/");

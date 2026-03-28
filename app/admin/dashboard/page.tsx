@@ -408,11 +408,28 @@ export default function AdminDashboard() {
   const [error,     setError]    = useState<string | null>(null);
   
   useEffect(() => {
+  // Check if session was passed via URL (cross-domain redirect)
+  const params = new URLSearchParams(window.location.search);
+  const sessionParam = params.get("session");
+
+  if (sessionParam) {
+    try {
+      const user = JSON.parse(decodeURIComponent(sessionParam));
+      localStorage.setItem("user", JSON.stringify(user));
+      // Clean URL without reloading
+      window.history.replaceState({}, "", window.location.pathname);
+    } catch {
+      window.location.href = "https://upendoapps.com";
+      return;
+    }
+  }
+
+  // Now check localStorage
   const user = getStoredUser();
   if (!user) {
     window.location.href = "https://upendoapps.com";
   }
-}, []);  
+  }, []); 
 
   const fetchDashboard = useCallback(async () => {
     if (!adminUser?.id) return;
