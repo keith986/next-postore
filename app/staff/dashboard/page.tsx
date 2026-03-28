@@ -182,6 +182,7 @@ export default function StaffDashboard() {
 
   /* ── Guard ── */
   /* ── Read session from URL if coming from cross-domain redirect ── */
+
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);
   const sessionParam = params.get("session");
@@ -192,27 +193,44 @@ useEffect(() => {
       localStorage.setItem("user", JSON.stringify(user));
       window.history.replaceState({}, "", window.location.pathname);
     } catch {
-      window.location.href = "https://upendoapps.com";
+      window.location.href = "https://pos.upendoapps.com";
       return;
     }
   }
 
   const stored = localStorage.getItem("user");
   if (!stored) {
-    window.location.href = "https://upendoapps.com";
+    window.location.href = "https://pos.upendoapps.com";
     return;
   }
 
   try {
     const user = JSON.parse(stored);
     if (!user || user.role !== "staff") {
-      window.location.href = "https://upendoapps.com";
+      window.location.href = "https://pos.upendoapps.com";
       return;
     }
-    setStaff(user); // ← set staff from localStorage
-    setReady(true); // ← mark as ready
+
+    // ── Check admin's subscription ──
+    fetch(`/api/subscription/status?user_id=${user.admin_id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.active) {
+          // Redirect to suspended page on their subdomain
+          window.location.href = "/suspended";
+          return;
+        }
+        setStaff(user);
+        setReady(true);
+      })
+      .catch(() => {
+        // Silent fail — allow access on network error
+        setStaff(user);
+        setReady(true);
+      });
+
   } catch {
-    window.location.href = "https://upendoapps.com";
+    window.location.href = "https://pos.upendoapps.com";
   }
 }, []);
 

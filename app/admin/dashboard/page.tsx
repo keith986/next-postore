@@ -407,7 +407,7 @@ export default function AdminDashboard() {
   const [fetching,  setFetching] = useState(true);
   const [error,     setError]    = useState<string | null>(null);
   
-  useEffect(() => {
+useEffect(() => {
   // Check if session was passed via URL (cross-domain redirect)
   const params = new URLSearchParams(window.location.search);
   const sessionParam = params.get("session");
@@ -416,7 +416,6 @@ export default function AdminDashboard() {
     try {
       const user = JSON.parse(decodeURIComponent(sessionParam));
       localStorage.setItem("user", JSON.stringify(user));
-      // Clean URL without reloading
       window.history.replaceState({}, "", window.location.pathname);
     } catch {
       window.location.href = "https://pos.upendoapps.com";
@@ -424,12 +423,25 @@ export default function AdminDashboard() {
     }
   }
 
-  // Now check localStorage
+  // Check localStorage
   const user = getStoredUser();
   if (!user) {
     window.location.href = "https://pos.upendoapps.com";
+    return;
   }
-  }, []); 
+
+  // Check subscription status
+  fetch(`/api/subscription/status?user_id=${user.id}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.active) {
+        window.location.href = "https://pos.upendoapps.com/payment";
+      }
+    })
+    .catch(() => {
+      // Silent fail — don't block dashboard on network error
+    });
+}, []);
 
   const fetchDashboard = useCallback(async () => {
     if (!adminUser?.id) return;
