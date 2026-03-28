@@ -42,8 +42,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Get the subdomain from the request host
     const host = request.headers.get('host') || ''
     const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'upendoapps.com'
+    const mainApp = process.env.NEXT_PUBLIC_MAIN_APP || 'pos.upendoapps.com'
     const subdomain = host.replace(`.${baseDomain}`, '')
-    const isSubdomain = subdomain !== host && subdomain !== 'www'
+
+// Not a tenant subdomain if it's the main app, www, or pos
+const isSubdomain = 
+  subdomain !== host && 
+  subdomain !== 'www' && 
+  subdomain !== 'pos' &&  // ← add this
+  host !== mainApp 
 
     /* ── 1. Check users table ── */
     const [userRows] = await pool.query<UserRow[]>(
