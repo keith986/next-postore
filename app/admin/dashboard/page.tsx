@@ -410,9 +410,7 @@ export default function AdminDashboard() {
   useEffect(() => {
   const user = getStoredUser();
   if (!user) {
-    // No user in localStorage — send back to main domain
     window.location.href = "https://upendoapps.com";
-    return;
   }
 }, []);
 
