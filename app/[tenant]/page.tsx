@@ -11,7 +11,6 @@ export default function TenantPage() {
     const stored = localStorage.getItem('user')
 
     if (!stored) {
-      // No user in localStorage — send to main domain
       window.location.href = 'https://pos.upendoapps.com'
       return
     }
@@ -19,9 +18,7 @@ export default function TenantPage() {
     try {
       const user = JSON.parse(stored)
 
-      // Check if this subdomain belongs to the stored user
       if (user.domain !== tenant) {
-        // Wrong subdomain — redirect to their correct one
         if (user.domain) {
           window.location.href = `https://${user.domain}.upendoapps.com`
         } else {
@@ -30,21 +27,38 @@ export default function TenantPage() {
         return
       }
 
-      // Correct subdomain — redirect based on pos_type
-      if (user.pos_type) {
-        window.location.href = '/admin/dashboard'
-      } else {
-        window.location.href = '/onboarding'
-      }
+      // ── Check subscription before redirecting to dashboard ──
+      fetch(`/api/subscription/status?user_id=${user.id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (!d.active) {
+            // No active subscription — send to payment
+            window.location.href = 'https://pos.upendoapps.com/payment'
+            return
+          }
+
+          // Active subscription — redirect based on pos_type
+          if (user.pos_type) {
+            window.location.href = '/admin/dashboard'
+          } else {
+            window.location.href = '/onboarding'
+          }
+        })
+        .catch(() => {
+          // On network error fall through normally
+          if (user.pos_type) {
+            window.location.href = '/admin/dashboard'
+          } else {
+            window.location.href = '/onboarding'
+          }
+        })
 
     } catch {
       localStorage.removeItem('user')
-      localStorage.removeItem('read_notifs')
-      window.location.href = 'https://pos.upendoapps.com?logout=true'
+      window.location.href = 'https://pos.upendoapps.com'
     }
   }, [tenant])
 
-  // Show loading while redirecting
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
