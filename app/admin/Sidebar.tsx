@@ -341,6 +341,8 @@ export default function Sidebar() {
   const sections = NAV_CONFIG[posType] ?? NAV_CONFIG.retail;
   const posMeta  = POS_TYPES_META.find(t => t.id === posType);
 
+  if (!user) return null;
+
   return (
     <>
       {switcherOpen && user && (
