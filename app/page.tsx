@@ -240,26 +240,26 @@ export default function LoginPage() {
   const [loading,  setLoading]  = useState(false);
   const router = useRouter();
 
-  /* ── Check for existing session (runs synchronously before render) ── */
-  const hasSession = typeof window !== "undefined" && (() => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") ?? "null");
-      return !!(user?.role && ROLE_REDIRECT[user.role]);
-    } catch {
-      localStorage.removeItem("user");
-      return false;
-    }
-  })();
+  // ── Handle logout FIRST — must run before hasSession ──
+if (typeof window !== "undefined") {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("logout") === "true") {
+    localStorage.removeItem("user");
+    localStorage.removeItem("read_notifs");
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+}
 
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("logout") === "true") {
-      localStorage.removeItem("user");
-      localStorage.removeItem("read_notifs");
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, [])
+/* ── Check for existing session (runs synchronously before render) ── */
+const hasSession = typeof window !== "undefined" && (() => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") ?? "null");
+    return !!(user?.role && ROLE_REDIRECT[user.role]);
+  } catch {
+    localStorage.removeItem("user");
+    return false;
+  }
+})();
 
   /* ── Redirect on mount — no setState, just router call ── */
  useEffect(() => {
