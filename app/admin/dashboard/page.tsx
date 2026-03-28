@@ -400,7 +400,8 @@ function NotificationBell({ adminId }: { adminId: string }) {
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function AdminDashboard() {
-  const [adminUser] = useState<StoredUser | null>(getStoredUser);
+  const [adminUser, setAdminUser] = useState<StoredUser | null>(null);
+  const [checked,   setChecked]   = useState(false);
   const { formatCurrency } = useStore();
   const usd = (n: number) => formatCurrency(n);
   const [data,      setData]     = useState<DashboardData | null>(null);
@@ -408,8 +409,7 @@ export default function AdminDashboard() {
   const [error,     setError]    = useState<string | null>(null);
   
 useEffect(() => {
-  // Check if session was passed via URL (cross-domain redirect)
-  const params = new URLSearchParams(window.location.search);
+  const params       = new URLSearchParams(window.location.search);
   const sessionParam = params.get("session");
 
   if (sessionParam) {
@@ -423,23 +423,28 @@ useEffect(() => {
     }
   }
 
-  // Check localStorage
   const user = getStoredUser();
   if (!user) {
     window.location.href = "https://pos.upendoapps.com";
     return;
   }
 
-  // Check subscription status
+  // Check subscription before showing dashboard
   fetch(`/api/subscription/status?user_id=${user.id}`)
     .then(r => r.json())
     .then(d => {
       if (!d.active) {
         window.location.href = "https://pos.upendoapps.com/payment";
+        return;
       }
+      // Subscription active — allow render
+      setAdminUser(user);
+      setChecked(true);
     })
     .catch(() => {
-      // Silent fail — don't block dashboard on network error
+      // On network error allow access silently
+      setAdminUser(user);
+      setChecked(true);
     });
 }, []);
 
@@ -466,6 +471,25 @@ useEffect(() => {
 
   const weeklyRevenue = data?.weekly_revenue ?? [];
   const maxBar = weeklyRevenue.length > 0 ? Math.max(...weeklyRevenue.map(d => d.revenue), 1) : 1;
+
+  if (!checked) return (
+    <div style={{
+      minHeight: "100vh", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      background: "#f5f4f0", gap: 10, color: "#9a9a8e", fontSize: 13,
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{
+        width: 18, height: 18,
+        border: "2px solid #e2e0d8",
+        borderTopColor: "#141410",
+        borderRadius: "50%",
+        animation: "spin 0.7s linear infinite",
+      }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      Verifying subscription…
+    </div>
+  );
 
   return (
     <>
