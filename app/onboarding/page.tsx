@@ -8,7 +8,7 @@ const POS_TYPES = [
   {
     id:       "retail",
     label:    "Retail Store",
-    emoji:    "🛍️",
+    icon:     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>,
     desc:     "Products, inventory, orders & customers. Perfect for shops, boutiques and general stores.",
     features: ["Product catalogue", "Stock management", "Customer loyalty", "Sales analytics"],
     accent:   "#2563eb",
@@ -18,7 +18,7 @@ const POS_TYPES = [
   {
     id:       "restaurant",
     label:    "Restaurant / Food",
-    emoji:    "🍽️",
+    icon:     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zM21 22v-7"/></svg>,
     desc:     "Menu management, table orders and kitchen flow. Built for cafes, restaurants and food stalls.",
     features: ["Menu & categories", "Table management", "Kitchen orders", "Daily specials"],
     accent:   "#d97706",
@@ -28,7 +28,7 @@ const POS_TYPES = [
   {
     id:       "salon",
     label:    "Salon / Service",
-    emoji:    "✂️",
+    icon:     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a3 3 0 100-6 3 3 0 000 6zM6 21a3 3 0 100-6 3 3 0 000 6zM20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg>,
     desc:     "Appointments, services and staff scheduling. Ideal for salons, spas and service businesses.",
     features: ["Appointments", "Service catalogue", "Staff rotas", "Client history"],
     accent:   "#7c3aed",
@@ -38,7 +38,7 @@ const POS_TYPES = [
   {
     id:       "wholesale",
     label:    "Wholesale",
-    emoji:    "📦",
+    icon:     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
     desc:     "Bulk orders, supplier management and tiered pricing for distributors and wholesalers.",
     features: ["Bulk ordering", "Supplier records", "Price tiers", "Purchase orders"],
     accent:   "#16a34a",
@@ -48,7 +48,7 @@ const POS_TYPES = [
   {
     id:       "pharmacy",
     label:    "Pharmacy / Medicine",
-    emoji:    "💊",
+    icon:     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 4.5a6 6 0 000 12h3a6 6 0 000-12h-3z"/><line x1="7.5" y1="10.5" x2="16.5" y2="10.5"/><line x1="12" y1="6" x2="12" y2="15"/></svg>,
     desc:     "Drug inventory, prescriptions, expiry tracking and patient records for pharmacies and clinics.",
     features: ["Drug catalogue", "Prescriptions", "Expiry tracking", "Patient records"],
     accent:   "#0891b2",
@@ -189,8 +189,17 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Emoji */}
-              <div style={{ fontSize: 32, marginBottom: "0.75rem", lineHeight: 1 }}>{type.emoji}</div>
+              {/* Icon */}
+              <div style={{
+                width: 52, height: 52, borderRadius: 12,
+                background: type.bg,
+                border: `1px solid ${type.border}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: type.accent,
+                marginBottom: "0.75rem",
+                }}>
+                {type.icon}
+              </div>
 
               {/* Title */}
               <div style={{ fontSize: 15, fontWeight: 600, color: "#141410", marginBottom: 6 }}>
