@@ -27,14 +27,11 @@ export async function middleware(request: NextRequest) {
   // ── Protect admin/staff routes ──
   if (pathname.startsWith('/admin') || pathname.startsWith('/staff')) {
     try {
-      const checkUrl = `https://${mainApp}/api/internal/check-subscription?domain=${subdomain}`
-      const res  = await fetch(checkUrl, { 
-        cache: 'no-store',
-        headers: { 'x-internal-key': process.env.INTERNAL_API_KEY || 'internal' }
-      })
+      const checkUrl = `https://${mainApp}/api/internal/subdomain-status?subdomain=${subdomain}`
+      const res  = await fetch(checkUrl, { cache: 'no-store' })
       const data = await res.json()
 
-      if (!data.active) {
+      if (data.status !== 'active') {
         return NextResponse.redirect(`https://${mainApp}/payment`)
       }
     } catch {

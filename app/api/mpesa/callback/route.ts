@@ -44,6 +44,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
            amount = VALUES(amount), next_billing_date = VALUES(next_billing_date)`,
           [user_id, plan, amount, nextBilling.toISOString().split("T")[0]]
         );
+
+        await pool.query(
+          "UPDATE users SET subdomain_status = 'active' WHERE id = ?",
+          [user_id]
+        );
+
       }
     } else {
       await pool.query(

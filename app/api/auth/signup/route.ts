@@ -61,7 +61,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     /* Create cPanel subdomain BEFORE writing to DB */
     const cpanel = await createSubdomain(domain);
     const subdomain_url   = cpanel.url    ?? null;
-    const subdomain_status = cpanel.success ? "active" : "pending";
+    //const subdomain_status = cpanel.success ? "active" : "pending";
+    const subdomain_status = "pending";
 
     if (!cpanel.success) {
       console.warn(`[Signup] Subdomain failed for "${domain}": ${cpanel.error}. Creating account anyway.`);

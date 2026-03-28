@@ -31,6 +31,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         [user_id, plan, checkoutRequestId, nextBilling.toISOString().split("T")[0]]
       );
 
+      await pool.query(
+        "UPDATE users SET subdomain_status = 'active' WHERE id = ?",
+        [user_id]
+      );
+
       return NextResponse.json({ status: "completed" });
     }
 
