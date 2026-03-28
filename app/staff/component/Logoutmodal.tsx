@@ -95,14 +95,13 @@ export default function LogoutModal({ open, onCancel, message }: LogoutModalProp
 
   if (!open) return null;
 
-  const handleLogout = () => {
+const handleLogout = () => {
   localStorage.removeItem("user");
   localStorage.removeItem("read_notifs");
   window.location.href = "https://upendoapps.com?logout=true";
 };
 
-  const defaultMessage =
-    "You'll be signed out of your account. Make sure any unsaved changes are saved before leaving.";
+  const defaultMessage = "You'll be signed out of your account. Make sure any unsaved changes are saved before leaving.";
 
   return (
     <>
