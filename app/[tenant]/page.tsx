@@ -20,7 +20,7 @@ export default function TenantPage() {
 
       // Check if this subdomain belongs to the stored user
       if (user.domain !== tenant) {
-        if (user.domain) {
+        if (user.domain ) {
           window.location.href = `https://${user.domain}.upendoapps.com`
         } else {
           window.location.href = 'https://pos.upendoapps.com'

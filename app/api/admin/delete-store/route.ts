@@ -30,38 +30,37 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 
     const domain = userRows[0].domain;
 
-    // ── Remove subdomain from server ──
+    // ── Remove subdomain from Nginx ──
     if (domain) {
       try {
-        const { stdout } = await execAsync(
-          `sudo /usr/local/bin/remove-subdomain.sh ${domain}`
-        );
-        console.log(`[Delete Store] Subdomain removal: ${stdout}`);
+        await execAsync(`rm -f /etc/nginx/sites-available/${domain}.upendoapps.com`);
+        await execAsync(`rm -f /etc/nginx/sites-enabled/${domain}.upendoapps.com`);
+        await execAsync(`nginx -t && systemctl reload nginx`);
+        console.log(`[Delete Store] Subdomain ${domain}.upendoapps.com removed from Nginx`);
       } catch (e) {
-        console.warn(`[Delete Store] Subdomain removal failed for "${domain}":`, e);
-        // Continue anyway — still delete the account
+        console.warn(`[Delete Store] Nginx removal failed for "${domain}":`, e);
+        // Continue anyway — still delete the DB data
       }
     }
 
     // ── Delete in dependency order ──
-    await pool.query("DELETE FROM stock_movements   WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM mpesa_transactions WHERE user_id = ?", [admin_id]);
-    await pool.query("DELETE FROM subscriptions      WHERE user_id = ?", [admin_id]);
-    await pool.query("DELETE FROM password_resets    WHERE user_id = ?", [admin_id]);
-    await pool.query("DELETE FROM orders             WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM customers          WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM products           WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM staff              WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM appointments       WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM services           WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM suppliers          WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM price_tiers        WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM prescriptions      WHERE admin_id = ?", [admin_id]);
-    await pool.query("DELETE FROM menu_items         WHERE admin_id = ?", [admin_id]);
-    await pool.query(`DELETE FROM \`tables\`         WHERE admin_id = ?`, [admin_id]);
-
-    // ── Delete settings (use admin_id column not id=1) ──
-    await pool.query("DELETE FROM settings WHERE admin_id = ?", [admin_id]);
+    // These run regardless of whether domain existed
+    await pool.query("DELETE FROM stock_movements    WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM mpesa_transactions  WHERE user_id = ?", [admin_id]);
+    await pool.query("DELETE FROM subscriptions       WHERE user_id = ?", [admin_id]);
+    await pool.query("DELETE FROM password_resets     WHERE user_id = ?", [admin_id]);
+    await pool.query("DELETE FROM orders              WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM customers           WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM products            WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM staff               WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM appointments        WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM services            WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM suppliers           WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM price_tiers         WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM prescriptions       WHERE admin_id = ?", [admin_id]);
+    await pool.query("DELETE FROM menu_items          WHERE admin_id = ?", [admin_id]);
+    await pool.query(`DELETE FROM \`tables\`          WHERE admin_id = ?`, [admin_id]);
+    await pool.query("DELETE FROM settings            WHERE admin_id = ?", [admin_id]);
 
     // ── Finally delete the admin account ──
     await pool.query("DELETE FROM users WHERE id = ?", [admin_id]);
