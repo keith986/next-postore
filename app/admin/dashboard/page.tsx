@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "@/app/_lib/StoreContext";
 import WeeklyRevenueChart from "@/app/admin/WeeklyRevenueChart";
+import Link from "next/link";
 
 /* ── Types ── */
 interface Notification {
@@ -457,24 +458,24 @@ useEffect(() => {
   const weeklyRevenue = data?.weekly_revenue ?? [];
   const maxBar = weeklyRevenue.length > 0 ? Math.max(...weeklyRevenue.map(d => d.revenue), 1) : 1;
 
-  if (!checked) return (
+if (!checked) return (
+  <div style={{
+    minHeight: "100vh", display: "flex",
+    alignItems: "center", justifyContent: "center",
+    background: "#f5f4f0", gap: 10, color: "#9a9a8e", fontSize: 13,
+    fontFamily: "'DM Sans', sans-serif",
+  }}>
     <div style={{
-      minHeight: "100vh", display: "flex",
-      alignItems: "center", justifyContent: "center",
-      background: "#f5f4f0", gap: 10, color: "#9a9a8e", fontSize: 13,
-      fontFamily: "'DM Sans', sans-serif",
-    }}>
-      <div style={{
-        width: 18, height: 18,
-        border: "2px solid #e2e0d8",
-        borderTopColor: "#141410",
-        borderRadius: "50%",
-        animation: "spin 0.7s linear infinite",
-      }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      Verifying subscription…
-    </div>
-  );
+      width: 18, height: 18,
+      border: "2px solid #e2e0d8",
+      borderTopColor: "#141410",
+      borderRadius: "50%",
+      animation: "spin 0.7s linear infinite",
+    }} />
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    Loading…
+  </div>
+);
 
   return (
     <>
@@ -590,7 +591,7 @@ useEffect(() => {
             <div style={{ background: "#fff", border: "1px solid #e2e0d8", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #e2e0d8" }}>
                 <span style={{ fontSize: 13, fontWeight: 500 }}>Recent Orders</span>
-                <a href="/admin/orders" style={{ fontSize: 12, color: "#d4522a", textDecoration: "none" }}>View all</a>
+                <Link href="/admin/orders" style={{ fontSize: 12, color: "#d4522a", textDecoration: "none" }}>View all</Link>
               </div>
               {(data.recent_orders ?? []).length === 0 ? (
                 <div style={{ padding: "2rem", textAlign: "center", color: "#9a9a8e", fontSize: 13 }}>No orders yet.</div>
@@ -652,7 +653,7 @@ useEffect(() => {
           <div style={{ background: "#fff", border: "1px solid #e2e0d8", borderRadius: 12, overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #e2e0d8" }}>
               <span style={{ fontSize: 13, fontWeight: 500 }}>Top Products</span>
-              <a href="/admin/inventory" style={{ fontSize: 12, color: "#d4522a", textDecoration: "none" }}>Manage inventory</a>
+             <Link href="/admin/inventory" style={{ fontSize: 12, color: "#d4522a", textDecoration: "none" }}>Manage inventory</Link>
             </div>
             {(data.top_products ?? []).length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#9a9a8e", fontSize: 13 }}>No product sales yet.</div>
