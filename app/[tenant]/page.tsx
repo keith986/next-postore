@@ -26,14 +26,39 @@ export default function TenantPage() {
           window.location.href = 'https://pos.upendoapps.com'
         }
         return
-      }
+      } 
 
-      // Correct subdomain — redirect based on pos_type
-      if (user.pos_type) {
+
+      /* Verify session with server before redirecting */
+    fetch("/api/auth/verify-session", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ user_id: user.id, role: user.role }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.valid) {
+          window.location.href= '/payment'
+          console.log("Session expired. Please sign in again.");
+          return;
+        }
+        if (data.payment_status === "unpaid") {
+          window.location.href= '/payment'
+          return;
+        }
+        
+        if(data.payment_status === "active"){
+          // Correct subdomain — redirect based on pos_type
+         if (user.pos_type) {
         window.location.href = '/admin/dashboard'
-      } else {
+        } else {
         window.location.href = '/onboarding'
-      }
+        }
+        }
+      })
+      .catch(/*Error*/);
+
+
 
     } catch {
       localStorage.removeItem('user')
