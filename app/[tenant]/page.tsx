@@ -27,7 +27,7 @@ export default function TenantPage() {
         }
         return
       } 
-  
+    
 
       /* Verify session with server before redirecting */
     fetch("/api/auth/verify-session", {
