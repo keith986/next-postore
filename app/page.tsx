@@ -129,7 +129,7 @@ export default function LoginPage() {
           setError("Session expired. Please sign in again.");
           return;
         }
-        if (data.payment_status === "unpaid") {
+        if (data.payment_status !== "completed") {
           clearSession();
           setRedirecting(false);
           setWarnMsg("Your account is not active. Complete payment to continue.");
@@ -280,6 +280,7 @@ export default function LoginPage() {
             <p className="footer-link">Don&apos;t have an account? <Link href="/signup">Create one free</Link></p>
           </div>
         </div>
+        
       </div>
     </>
   );

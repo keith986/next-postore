@@ -34,13 +34,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     /* Admin — check subscription */
     const [subRows] = await pool.query(
-      `SELECT status FROM subscriptions
-       WHERE user_id = ? AND status = 'active'
+      `SELECT status FROM mpesa_transactions
+       WHERE user_id = ? AND status = 'completed'
        LIMIT 1`,
       [user_id]
     ) as [{ status: string }[], unknown];
 
-    const payment_status = subRows.length > 0 ? "active" : "unpaid";
+    const payment_status = subRows.length > 0 ? "completed" : "unpaid";
 
     return NextResponse.json({ valid: true, payment_status });
 
