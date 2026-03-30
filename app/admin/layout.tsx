@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { StoreProvider } from "@/app/_lib/StoreContext";
 import Link from "next/link";
 import Sidebar from "./Sidebar";
+import IdleTimeoutWarning from "../components/IdleTimeoutWarning";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap');
@@ -418,6 +419,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <StoreProvider>
+      <IdleTimeoutWarning />
       <style>{css}</style>
       <div className="shell">
         <Sidebar />
