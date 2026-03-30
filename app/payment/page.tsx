@@ -240,7 +240,7 @@ export default function PaymentPage() {
       ? `pending_${pendingSignup?.email?.replace(/[^a-z0-9]/gi, "_")}`
       : user?.id;
 
-    try {
+    try {  
       const res  = await fetch("/api/mpesa/stk", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },

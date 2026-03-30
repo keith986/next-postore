@@ -6,7 +6,7 @@ interface Row extends RowDataPacket { id: string }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, domain } = await request.json();
-
+  
   try {
     const pool = await getPool();
 
