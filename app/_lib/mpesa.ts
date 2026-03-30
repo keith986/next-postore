@@ -1,4 +1,4 @@
-const MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"; // change to https://api.safaricom.co.ke for production
+const MPESA_BASE_URL = "https://api.safaricom.co.ke";
 
 async function getAccessToken(): Promise<string> {
   const auth = Buffer.from(

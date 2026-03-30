@@ -20,8 +20,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       description: `POStore ${plan} plan - monthly`,
     });
 
-    if (result.ResponseCode !== "0")
-      return NextResponse.json({ error: "Failed to initiate payment" }, { status: 400 });
+  
+  console.log("STK Push result:", JSON.stringify(result));
+
+  if (result.ResponseCode !== "0")
+  return NextResponse.json({ 
+    error: "Failed to initiate payment",
+    details: result 
+  }, { status: 400 });
 
     // Save pending transaction
     const pool = await getPool();
