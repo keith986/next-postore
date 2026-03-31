@@ -56,9 +56,12 @@ const css = `
   .pay-btn { width: 100%; padding: 12px; background: #16a34a; color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .pay-btn:hover:not(:disabled) { background: #15803d; transform: translateY(-1px); }
   .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .check-btn { width: 100%; padding: 12px; background: var(--ink); color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+  .check-btn:hover:not(:disabled) { background: #2a2a22; transform: translateY(-1px); }
+  .check-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
   .polling-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-  .polling-card { background: #fff; border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
+  .polling-card { background: #fff; border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
   @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   .polling-icon { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
   .polling-icon.pending { background: #fffbeb; border: 1px solid #fde68a; }
@@ -68,13 +71,19 @@ const css = `
   .polling-sub { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; }
   .spinner { width: 28px; height: 28px; border: 3px solid #e2e0d8; border-top-color: #d97706; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
   @keyframes spin { to{transform:rotate(360deg)} }
-  .cancel-btn { background: none; border: 1px solid var(--border2); border-radius: 8px; padding: 9px 24px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .cancel-btn { background: none; border: 1px solid var(--border2); border-radius: 8px; padding: 9px 24px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--muted); cursor: pointer; transition: all 0.15s; width: 100%; }
   .cancel-btn:hover { border-color: var(--ink2); color: var(--ink); }
-  .retry-btn { width: 100%; padding: 11px; background: #dc2626; color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .retry-btn { width: 100%; padding: 11px; background: #dc2626; color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; margin-bottom: 10px; }
   .retry-btn:hover { background: #b91c1c; }
   .error-box { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
   .divider-line { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
   .secure-note { font-size: 11px; color: #c8c6bc; text-align: center; margin-top: 0.75rem; line-height: 1.5; }
+  .pending-instructions { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; text-align: left; }
+  .pending-instructions .pi-title { font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px; }
+  .pending-instructions ol { padding-left: 1.1rem; display: flex; flex-direction: column; gap: 5px; }
+  .pending-instructions ol li { font-size: 12px; color: #78350f; line-height: 1.5; }
+  .pending-instructions .pi-amount { font-weight: 700; color: #92400e; }
+  .check-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; }
   @media (max-width: 700px) { .plans { grid-template-columns: 1fr; } .pos-selector { gap: 6px; } }
   @media (max-width: 900px) and (min-width: 701px) { .plans { grid-template-columns: 1fr 1fr; } }
 `;
@@ -115,11 +124,12 @@ export default function PaymentPage() {
   const [plan,          setPlan]          = useState<PlanId>("pro");
   const [phone,         setPhone]         = useState("");
   const [loading,       setLoading]       = useState(false);
+  const [checking,      setChecking]      = useState(false); // manual check in progress
   const [error,         setError]         = useState("");
   const [polling,       setPolling]       = useState<PollingStatus>("idle");
   const [checkoutId,    setCheckoutId]    = useState("");
   const [failMsg,       setFailMsg]       = useState("");
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const [checkCount,    setCheckCount]    = useState(0);   // how many times user has checked
 
   /* ── Init ── */
   useEffect(() => {
@@ -134,7 +144,6 @@ export default function PaymentPage() {
       return;
     }
 
-    // Existing user renewing subscription
     const u = getStoredUser();
     if (!u) { router.push("/"); return; }
     setUser(u);
@@ -143,91 +152,81 @@ export default function PaymentPage() {
 
   const amount = getPrice(posType, plan);
 
-  /* ── Stop polling ── */
-  const stopPolling = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-  };
+  /* ── Manual payment check ── */
+  const handleCheckPayment = async () => {
+    if (!checkoutId) return;
+    setChecking(true);
+    setCheckCount(c => c + 1);
 
-  /* ── Poll for payment status ── */
-  const startPolling = (checkoutRequestId: string) => {
-    let attempts = 0;
-    const maxAttempts = 24; // 2 min
+    try {
+      const res  = await fetch("/api/mpesa/query", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          checkoutRequestId: checkoutId,
+          user_id: isNewSignup ? `pending_${pendingSignup?.email}` : user?.id,
+          plan,
+        }),
+      });
+      const data = await res.json();
 
-    pollRef.current = setInterval(async () => {
-      attempts++;
-      try {
-        const res  = await fetch("/api/mpesa/query", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            checkoutRequestId,
-            user_id:   isNewSignup ? `pending_${pendingSignup?.email}` : user?.id,
-            plan,
-          }),
-        });
-        const data = await res.json();
+      if (data.status === "completed") {
+        if (isNewSignup && pendingSignup) {
+          const createRes  = await fetch("/api/auth/signup/", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+              ...pendingSignup,
+              plan,
+              pos_type: posType,
+              checkout_request_id: checkoutId,
+            }),
+          });
+          const createData = await createRes.json();
 
-        if (data.status === "completed") {
-          stopPolling();
-
-          if (isNewSignup && pendingSignup) {
-            // ── Create account now ──
-            const createRes  = await fetch("/api/auth/signup/", {
-              method:  "POST",
-              headers: { "Content-Type": "application/json" },
-              body:    JSON.stringify({
-                ...pendingSignup,
-                plan,
-                pos_type: posType,
-                checkout_request_id: checkoutRequestId,
-              }),
-            });
-            const createData = await createRes.json();
-
-            if (createRes.ok && createData.user) {
-              sessionStorage.removeItem("pending_signup");
-              localStorage.setItem("user", JSON.stringify(createData.user));
-              setPolling("success");
-              setTimeout(() => router.push("/onboarding"), 3000);
-              return;
-            } else {
-              setPolling("failed");
-              setFailMsg(createData.error || "Account creation failed. Contact support.");
-              return;
-            }
+          if (createRes.ok && createData.user) {
+            sessionStorage.removeItem("pending_signup");
+            localStorage.setItem("user", JSON.stringify(createData.user));
+            setPolling("success");
+            setTimeout(() => router.push("/onboarding"), 3000);
+          } else {
+            setPolling("failed");
+            setFailMsg(createData.error || "Account creation failed. Contact support.");
           }
-
-          // Existing user renewal
-          const updated = { ...user, plan };
-          localStorage.setItem("user", JSON.stringify(updated));
-          setPolling("success");
-          setTimeout(() => router.push("/onboarding"), 2500);
           return;
         }
 
-        if (data.status === "failed") {
-          stopPolling();
-          setPolling("failed");
-          setFailMsg(data.message || "Payment was not completed. Please try again.");
-          return;
-        }
-
-        if (attempts >= maxAttempts) {
-          stopPolling();
-          setPolling("failed");
-          setFailMsg("Payment timed out. Please try again.");
-        }
-      } catch {
-        if (attempts >= maxAttempts) {
-          stopPolling();
-          setPolling("failed");
-          setFailMsg("Could not verify payment. Please contact support.");
-        }
+        // Existing user renewal
+        const updated = { ...user, plan };
+        localStorage.setItem("user", JSON.stringify(updated));
+        setPolling("success");
+        setTimeout(() => {
+          if (user?.domain) {
+            window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+          } else {
+            router.push("/admin/dashboard");
+          }
+        }, 2500);
+        return;
       }
-    }, 5000);
+
+      if (data.status === "failed" || data.status === "cancelled") {
+        setPolling("failed");
+        setFailMsg(data.message || "Payment was not completed. Please try again.");
+        return;
+      }
+
+      // Still pending — stay on the waiting screen, user can check again
+      // (no state change — they'll see the same screen)
+
+    } catch {
+      setFailMsg("Could not reach the server. Please try again.");
+    } finally {
+      setChecking(false);
+    }
   };
 
-  /* ── Pay ── */
+  /* ── Initiate STK push ── */
   const handlePay = async () => {
     if (!phone) return setError("Please enter your M-Pesa phone number.");
     const phoneClean = phone.replace(/\s/g, "");
@@ -240,7 +239,7 @@ export default function PaymentPage() {
       ? `pending_${pendingSignup?.email?.replace(/[^a-z0-9]/gi, "_")}`
       : user?.id;
 
-    try {  
+    try {
       const res  = await fetch("/api/mpesa/stk", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,8 +258,8 @@ export default function PaymentPage() {
         throw new Error(data.error || "Failed to initiate payment.");
 
       setCheckoutId(data.checkoutRequestId);
+      setCheckCount(0);
       setPolling("pending");
-      startPolling(data.checkoutRequestId);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -269,17 +268,13 @@ export default function PaymentPage() {
   };
 
   const handleCancel = () => {
-    stopPolling();
     setPolling("idle");
     setCheckoutId("");
     setFailMsg("");
+    setCheckCount(0);
   };
 
-  /* ── Display name ── */
-  const displayName = isNewSignup
-    ? pendingSignup?.full_name?.split(" ")[0] ?? "there"
-    : user?.full_name?.split(" ")[0] ?? "there";
-
+  const displayName      = isNewSignup ? pendingSignup?.full_name?.split(" ")[0] ?? "there" : user?.full_name?.split(" ")[0] ?? "there";
   const selectedPosLabel = POS_PRICES.find(p => p.posType === posType)?.label ?? posType;
   const selectedPlan     = PLANS.find(p => p.id === plan);
 
@@ -287,15 +282,15 @@ export default function PaymentPage() {
     <>
       <style>{css}</style>
 
-      {/* ── Polling overlay ── */}
+      {/* ── Overlay modal ── */}
       {polling !== "idle" && (
         <div className="polling-overlay">
           <div className="polling-card">
 
+            {/* ── PENDING: waiting for user to pay ── */}
             {polling === "pending" && (
               <>
-                <div className="spinner" />
-                <div className="polling-icon pending" style={{ marginBottom: "1rem" }}>
+                <div className="polling-icon pending">
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2"/>
                     <line x1="12" y1="18" x2="12.01" y2="18"/>
@@ -303,13 +298,58 @@ export default function PaymentPage() {
                 </div>
                 <div className="polling-title">Check your phone</div>
                 <div className="polling-sub">
-                  We sent an M-Pesa STK push to <strong>{phone}</strong>.<br />
-                  Enter your PIN to complete payment of <strong>KES {amount.toLocaleString()}</strong>.
+                  An M-Pesa STK prompt was sent to <strong>{phone}</strong>.<br />
+                  Enter your PIN, then tap the button below to confirm your payment.
                 </div>
-                <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+
+                {/* Step-by-step instructions */}
+                <div className="pending-instructions">
+                  <div className="pi-title">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    How to complete payment
+                  </div>
+                  <ol>
+                    <li>Open your M-Pesa app or check your SMS</li>
+                    <li>Enter your M-Pesa PIN to authorize <span className="pi-amount">KES {amount.toLocaleString()}</span></li>
+                    <li>Once you see the confirmation SMS, tap <strong>I have paid</strong> below</li>
+                  </ol>
+                </div>
+
+                {/* Manual check button */}
+                <button
+                  className="check-btn"
+                  onClick={handleCheckPayment}
+                  disabled={checking}
+                >
+                  {checking ? (
+                    <>
+                      <div style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                      Checking…
+                    </>
+                  ) : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      I&apos;ve paid — confirm now
+                    </>
+                  )}
+                </button>
+
+                {/* Subtle hint after multiple checks */}
+                {checkCount > 0 && (
+                  <p className="check-hint" style={{ marginBottom: "0.75rem" }}>
+                    {checkCount === 1
+                      ? "Payment not found yet. Make sure you completed the M-Pesa prompt."
+                      : "Still not showing? Wait a moment and try again, or cancel and retry."}
+                  </p>
+                )}
+
+                <button className="cancel-btn" onClick={handleCancel}>Cancel &amp; go back</button>
               </>
             )}
 
+            {/* ── SUCCESS ── */}
             {polling === "success" && (
               <>
                 <div className="polling-icon success">
@@ -329,6 +369,7 @@ export default function PaymentPage() {
               </>
             )}
 
+            {/* ── FAILED ── */}
             {polling === "failed" && (
               <>
                 <div className="polling-icon failed">
@@ -341,6 +382,7 @@ export default function PaymentPage() {
                 <div className="polling-title" style={{ color: "#dc2626" }}>Payment failed</div>
                 <div className="polling-sub">{failMsg}</div>
                 <button className="retry-btn" onClick={handleCancel}>Try again</button>
+                <button className="cancel-btn" style={{ marginTop: 8 }} onClick={handleCancel}>Cancel</button>
               </>
             )}
 
@@ -353,24 +395,14 @@ export default function PaymentPage() {
         {/* ── Header ── */}
         <div className="header">
           <div className="logo">P</div>
-          <h1>
-            {isNewSignup ? `Welcome, ${displayName}!` : "Renew your subscription"}
-          </h1>
-          <p>
-            {isNewSignup
-              ? "Choose a plan and pay to activate your store."
-              : "Select a plan to continue using POStore."}
-          </p>
+          <h1>{isNewSignup ? `Welcome, ${displayName}!` : "Renew your subscription"}</h1>
+          <p>{isNewSignup ? "Choose a plan and pay to activate your store." : "Select a plan to continue using POStore."}</p>
         </div>
 
         {/* ── POS Type selector ── */}
         <div className="pos-selector">
           {POS_PRICES.map(p => (
-            <button
-              key={p.posType}
-              className={`pos-btn ${posType === p.posType ? "active" : ""}`}
-              onClick={() => setPosType(p.posType)}
-            >
+            <button key={p.posType} className={`pos-btn ${posType === p.posType ? "active" : ""}`} onClick={() => setPosType(p.posType)}>
               {p.label}
             </button>
           ))}
@@ -382,13 +414,8 @@ export default function PaymentPage() {
             const price      = getPrice(posType, p.id);
             const isSelected = plan === p.id;
             return (
-              <div
-                key={p.id}
-                className={`plan-card ${isSelected ? "selected" : ""} ${p.highlight ? "highlight" : ""}`}
-                onClick={() => setPlan(p.id)}
-              >
+              <div key={p.id} className={`plan-card ${isSelected ? "selected" : ""} ${p.highlight ? "highlight" : ""}`} onClick={() => setPlan(p.id)}>
                 {p.badge && <div className="plan-badge">{p.badge}</div>}
-
                 {isSelected && (
                   <div className="select-indicator">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
@@ -396,15 +423,10 @@ export default function PaymentPage() {
                     </svg>
                   </div>
                 )}
-
                 <div className="plan-name">{p.name}</div>
                 <div className="plan-desc">{p.description}</div>
-                <div className="plan-price">
-                  KES {price.toLocaleString()}<span>/mo</span>
-                </div>
-
+                <div className="plan-price">KES {price.toLocaleString()}<span>/mo</span></div>
                 <hr className="plan-divider" />
-
                 <ul className="plan-features">
                   {p.features.map(f => (
                     <li key={f}>
@@ -430,33 +452,16 @@ export default function PaymentPage() {
             Order summary
           </div>
 
-          {/* Summary */}
-          <div className="summary-row">
-            <span>Plan</span>
-            <span>{selectedPlan?.name}</span>
-          </div>
-          <div className="summary-row">
-            <span>POS Type</span>
-            <span>{selectedPosLabel}</span>
-          </div>
-          <div className="summary-row">
-            <span>Billing cycle</span>
-            <span>Monthly</span>
-          </div>
+          <div className="summary-row"><span>Plan</span><span>{selectedPlan?.name}</span></div>
+          <div className="summary-row"><span>POS Type</span><span>{selectedPosLabel}</span></div>
+          <div className="summary-row"><span>Billing cycle</span><span>Monthly</span></div>
           {isNewSignup && pendingSignup && (
-            <div className="summary-row">
-              <span>Store</span>
-              <span>{pendingSignup.store_name}</span>
-            </div>
+            <div className="summary-row"><span>Store</span><span>{pendingSignup.store_name}</span></div>
           )}
-          <div className="summary-row total">
-            <span>Total today</span>
-            <span>KES {amount.toLocaleString()}</span>
-          </div>
+          <div className="summary-row total"><span>Total today</span><span>KES {amount.toLocaleString()}</span></div>
 
           <hr className="divider-line" />
 
-          {/* M-Pesa */}
           <div className="mpesa-badge">
             <div className="mpesa-dot" />
             <div className="mpesa-text">Pay with M-Pesa STK Push</div>
@@ -471,12 +476,7 @@ export default function PaymentPage() {
 
           <div className="field">
             <label>M-Pesa Phone Number</label>
-            <input
-              type="tel"
-              placeholder="07XXXXXXXX or 01XXXXXXXX"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-            />
+            <input type="tel" placeholder="07XXXXXXXX or 01XXXXXXXX" value={phone} onChange={e => setPhone(e.target.value)} />
           </div>
 
           <button className="pay-btn" onClick={handlePay} disabled={loading}>

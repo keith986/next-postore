@@ -416,8 +416,31 @@ useEffect(() => {
   if (sessionParam) {
     try {
       const user = JSON.parse(decodeURIComponent(sessionParam));
-      localStorage.setItem("user", JSON.stringify(user));
       window.history.replaceState({}, "", window.location.pathname);
+
+      // Verify before trusting
+      fetch("/api/auth/verify-session", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ user_id: user.id, role: user.role }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.valid || data.payment_status !== "active") {
+            window.location.href = "https://pos.upendoapps.com?unauthorized=true";
+            return;
+          }
+          localStorage.setItem("user", JSON.stringify(user));
+          setAdminUser(user);
+          setChecked(true);
+        })
+        .catch(() => {
+          // Network error — allow through
+          localStorage.setItem("user", JSON.stringify(user));
+          setAdminUser(user);
+          setChecked(true);
+        });
+      return;
     } catch {
       window.location.href = "https://pos.upendoapps.com";
       return;
@@ -425,11 +448,7 @@ useEffect(() => {
   }
 
   const user = getStoredUser();
-  if (!user) {
-    window.location.href = "https://pos.upendoapps.com";
-    return;
-  }
-
+  if (!user) { window.location.href = "https://pos.upendoapps.com"; return; }
   setAdminUser(user);
   setChecked(true);
 }, []);

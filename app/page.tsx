@@ -69,7 +69,10 @@ const ROLE_REDIRECT: Record<string, string> = {
 function getStoredUser() {
   if (typeof window === "undefined") return null;
   try { return JSON.parse(localStorage.getItem("user") ?? "null"); }
-  catch { localStorage.removeItem("user"); return null; }
+  catch { 
+    localStorage.removeItem("user");
+    localStorage.removeItem("read_notifs");
+     return null; }
 }
 function clearSession() {
   if (typeof window === "undefined") return;
@@ -129,7 +132,7 @@ export default function LoginPage() {
           setError("Session expired. Please sign in again.");
           return;
         }
-        if (data.payment_status !== "completed") {
+        if (data.payment_status === "unpaid") {
           clearSession();
           setRedirecting(false);
           setWarnMsg("Your account is not active. Complete payment to continue.");

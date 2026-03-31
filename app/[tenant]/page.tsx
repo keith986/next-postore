@@ -10,36 +10,61 @@ export default function TenantPage() {
   useEffect(() => {
     const stored = localStorage.getItem('user')
 
-    // No user in localStorage — go to main login
     if (!stored) {
       window.location.href = 'https://pos.upendoapps.com'
       return
     }
 
+    let user: Record<string, string>
     try {
-      const user = JSON.parse(stored)
-
-      // Wrong subdomain for this user
-      if (user.domain !== tenant) {
-        if (user.domain) {
-          window.location.href = `https://${user.domain}.upendoapps.com`
-        } else {
-          window.location.href = 'https://pos.upendoapps.com'
-        }
-        return
-      }
-
-      // Correct subdomain — redirect based on pos_type
-      if (user.pos_type) {
-        window.location.href = '/admin/dashboard'
-      } else {
-        window.location.href = '/onboarding'
-      }
-
+      user = JSON.parse(stored)
     } catch {
       localStorage.removeItem('user')
       window.location.href = 'https://pos.upendoapps.com'
+      return
     }
+
+    // Wrong subdomain for this user
+    if (user.domain !== tenant) {
+      window.location.href = user.domain
+        ? `https://${user.domain}.upendoapps.com`
+        : 'https://pos.upendoapps.com'
+      return
+    }
+
+    // Verify session with server before trusting localStorage
+    fetch('/api/auth/verify-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id, role: user.role }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.valid) {
+          localStorage.removeItem('user')
+          window.location.href = 'https://pos.upendoapps.com?unauthorized=true'
+          return
+        }
+
+        if (data.payment_status !== 'active') {
+          localStorage.removeItem('user')
+          window.location.href = 'https://pos.upendoapps.com?unpaid=true'
+          return
+        }
+
+        // All clear — redirect based on role/pos_type
+        if (user.role === 'staff') {
+          window.location.href = '/staff/dashboard'
+          return
+        }
+
+        window.location.href = user.pos_type ? '/admin/dashboard' : '/onboarding'
+      })
+      .catch(() => {
+        // Network error — allow through rather than lock out
+        window.location.href = user.pos_type ? '/admin/dashboard' : '/onboarding'
+      })
+
   }, [tenant])
 
   return (

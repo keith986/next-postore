@@ -1,52 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/app/_lib/db";
 
-/* ── POST /api/auth/verify-session
-   Body: { user_id: string, role: string }
-   Called by login page and admin layout before allowing access.
-   Returns:
-     { valid: false }                          → session is forged / user doesn't exist
-     { valid: true, payment_status: "unpaid" } → user exists but hasn't paid
-     { valid: true, payment_status: "active" } → all clear
-── */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { user_id, role } = await request.json();
-
-    if (!user_id || !role)
-      return NextResponse.json({ valid: false });
+    if (!user_id || !role) return NextResponse.json({ valid: false });
 
     const pool = await getPool();
 
-    /* Check user exists and get their role */
+    // Check users table
+    let foundRole: string | null = null;
     const [userRows] = await pool.query(
       "SELECT id, role FROM users WHERE id = ? LIMIT 1",
       [user_id]
     ) as [{ id: string; role: string }[], unknown];
 
-    /* User not found or role tampered */
-    if (!userRows.length || userRows[0].role !== role)
-      return NextResponse.json({ valid: false });
+    if (userRows.length && userRows[0].role === role) {
+      foundRole = userRows[0].role;
+    }
 
-    /* Staff don't need subscription check */
-    if (role === "staff")
+    // Staff may live in the staff table instead
+    if (!foundRole && role === "staff") {
+      const [staffRows] = await pool.query(
+        "SELECT id FROM staff WHERE id = ? AND status = 'active' LIMIT 1",
+        [user_id]
+      ) as [{ id: string }[], unknown];
+      if (staffRows.length) foundRole = "staff";
+    }
+
+    if (!foundRole) return NextResponse.json({ valid: false });
+
+    // Staff don't need a subscription check
+    if (foundRole === "staff") {
       return NextResponse.json({ valid: true, payment_status: "active" });
+    }
 
-    /* Admin — check subscription */
+    // Admin — check active subscription first
+    /*
     const [subRows] = await pool.query(
-      `SELECT status FROM mpesa_transactions
-       WHERE user_id = ? AND status = 'completed'
-       LIMIT 1`,
+      "SELECT id FROM mpesa_transactions WHERE user_id = ? AND status = 'completed' LIMIT 1",
       [user_id]
-    ) as [{ status: string }[], unknown];
+    ) as [{ id: string }[], unknown];
 
-    const payment_status = subRows.length > 0 ? "completed" : "unpaid";
+    if (subRows.length) {
+      return NextResponse.json({ valid: true, payment_status: "active" });
+    }
+    */
 
+    // Fall back to checking for a completed M-Pesa transaction
+    // (handles cases where subscription row wasn't created yet)
+    const [txRows] = await pool.query(
+      "SELECT id FROM mpesa_transactions WHERE user_id = ? AND status = 'completed' LIMIT 1",
+      [user_id]
+    ) as [{ id: string }[], unknown];
+
+    const payment_status = txRows.length > 0 ? "active" : "unpaid";
     return NextResponse.json({ valid: true, payment_status });
 
   } catch (error) {
     console.error("[verify-session]", (error as Error).message);
-    /* On DB error, allow through to avoid locking out users */
     return NextResponse.json({ valid: true, payment_status: "active" });
   }
 }
