@@ -16,8 +16,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const result = await stkPush({
       phone,
       amount,
-      accountRef:  "POStore",
-      description: `POStore ${plan} plan - monthly`,
+      accountRef:  "UPENDO KENYADIGITAL POStore",
+      description: `UPENDO KENYADIGITAL POStore ${plan} plan - monthly`,
     });
 
   

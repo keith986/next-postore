@@ -90,7 +90,8 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
 
-  /* ── On mount: handle URL flags + auto-login ── */
+   /* ── On mount: handle URL flags + auto-login ── */
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -261,8 +262,7 @@ export default function LoginPage() {
 
             {warnMsg && (
               <div className="warn-box">
-                ⚠️ {warnMsg}{" "}
-                <Link href="/payment?signup=true">Complete payment →</Link>
+                {warnMsg}{" "}
               </div>
             )}
 
