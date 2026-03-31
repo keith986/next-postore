@@ -408,7 +408,8 @@ export default function AdminDashboard() {
   const [data,      setData]     = useState<DashboardData | null>(null);
   const [fetching,  setFetching] = useState(true);
   const [error,     setError]    = useState<string | null>(null);
-  
+ 
+ /* 
 useEffect(() => {
   const params       = new URLSearchParams(window.location.search);
   const sessionParam = params.get("session");
@@ -433,12 +434,13 @@ useEffect(() => {
     window.location.href = "https://pos.upendoapps.com";
     return;
   }
-  
+
   setAdminUser(user);
   setChecked(true);
 }, []);
+*/
 
-/*
+
 useEffect(() => {
   const user : StoredUser | null = getStoredUser();
   const params       = new URLSearchParams(window.location.search);
@@ -482,7 +484,7 @@ useEffect(() => {
   setAdminUser(user);
   setChecked(true);
 }, []);
-*/
+
 
   const fetchDashboard = useCallback(async () => {
     if (!adminUser?.id) return;
