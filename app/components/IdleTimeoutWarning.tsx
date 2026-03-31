@@ -59,7 +59,14 @@ export default function IdleTimeoutWarning() {
         padding: "2rem", maxWidth: 400, width: "90%",
         textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
       }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>⏱️</div>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" stroke="black" stroke-width="2" fill="white" />
+            <line x1="50" y1="50" x2="50" y2="30" stroke="black" stroke-width="4" stroke-linecap="round" />
+            <line x1="50" y1="50" x2="65" y2="50" stroke="black" stroke-width="2" stroke-linecap="round" />
+            <circle cx="50" cy="50" r="3" fill="black" />
+            </svg>
+        </div>
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
           Session Expiring Soon
         </h2>

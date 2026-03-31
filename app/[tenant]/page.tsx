@@ -42,7 +42,7 @@ export default function TenantPage() {
           console.log("Session expired. Please sign in again.");
           return;
         }
-        if (data.payment_status === "unpaid") {
+        if (data.payment_status !== "completed") {
           window.location.href= '/payment'
           return;
         }
