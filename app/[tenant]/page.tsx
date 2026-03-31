@@ -32,7 +32,7 @@ export default function TenantPage() {
       return
     }
 
-    // Verify session with server before trusting localStorage
+    // Verify session server-side
     fetch('/api/auth/verify-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -41,30 +41,28 @@ export default function TenantPage() {
       .then(r => r.json())
       .then(data => {
         if (!data.valid) {
-          localStorage.removeItem('user');
-          localStorage.removeItem("read_notifs");
+          localStorage.removeItem('user')
           window.location.href = 'https://pos.upendoapps.com?unauthorized=true'
           return
         }
 
         if (data.payment_status !== 'active') {
           localStorage.removeItem('user')
-          localStorage.removeItem("read_notifs");
           window.location.href = 'https://pos.upendoapps.com?unpaid=true'
           return
         }
 
-        // All clear — redirect based on role/pos_type
-        if (user.role === 'staff') {
-          window.location.href = '/staff/dashboard'
-          return
-        }
-
-        window.location.href = user.pos_type ? '/admin/dashboard' : '/onboarding'
+        // ✅ Carry user data to dashboard via session param
+        // so dashboard can seed its own localStorage on this subdomain
+        const encoded = encodeURIComponent(JSON.stringify(user))
+        const dest = user.role === 'staff' ? 'staff' : 'admin'
+        window.location.href = `/${dest}/dashboard?session=${encoded}`
       })
       .catch(() => {
-        // Network error — allow through rather than lock out
-        window.location.href = user.pos_type ? '/admin/dashboard' : '/onboarding'
+        // Network error — allow through with session param
+        const encoded = encodeURIComponent(JSON.stringify(user))
+        const dest = user.role === 'staff' ? 'staff' : 'admin'
+        window.location.href = `/${dest}/dashboard?session=${encoded}`
       })
 
   }, [tenant])
