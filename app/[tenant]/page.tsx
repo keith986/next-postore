@@ -10,6 +10,7 @@ export default function TenantPage() {
   useEffect(() => {
     const stored = localStorage.getItem('user')
 
+    // No user in localStorage — go to main login
     if (!stored) {
       window.location.href = 'https://pos.upendoapps.com'
       return
@@ -18,47 +19,22 @@ export default function TenantPage() {
     try {
       const user = JSON.parse(stored)
 
-      // Check if this subdomain belongs to the stored user
+      // Wrong subdomain for this user
       if (user.domain !== tenant) {
-        if (user.domain ) {
+        if (user.domain) {
           window.location.href = `https://${user.domain}.upendoapps.com`
         } else {
           window.location.href = 'https://pos.upendoapps.com'
         }
         return
-      } 
-    
+      }
 
-      /* Verify session with server before redirecting */
-    fetch("/api/auth/verify-session", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ user_id: user.id, role: user.role }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (!data.valid) {
-          window.location.href= '/payment'
-          console.log("Session expired. Please sign in again.");
-          return;
-        }
-        if (data.payment_status !== "completed") {
-          window.location.href= '/payment'
-          return;
-        }
-        
-        if(data.payment_status === "active"){
-          // Correct subdomain — redirect based on pos_type
-         if (user.pos_type) {
+      // Correct subdomain — redirect based on pos_type
+      if (user.pos_type) {
         window.location.href = '/admin/dashboard'
-        } else {
+      } else {
         window.location.href = '/onboarding'
-        }
-        }
-      })
-      .catch(/*Error*/);
-
-
+      }
 
     } catch {
       localStorage.removeItem('user')
