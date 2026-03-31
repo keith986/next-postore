@@ -397,12 +397,6 @@ function NotificationBell({ adminId }: { adminId: string }) {
   );
 }
 
-function clearSession() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("user");
-  localStorage.removeItem("read_notifs");
-}
-
 /* ─────────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────── */
@@ -451,25 +445,6 @@ useEffect(() => {
   const user : StoredUser | null = getStoredUser();
   const params       = new URLSearchParams(window.location.search);
   const sessionParam = params.get("session");
-
-  if (typeof window === "undefined") return;
-    
-    if (params.get("logout") === "true") {
-      clearSession();
-      window.history.replaceState({}, "", window.location.pathname);
-      return;
-    }
-    if (params.get("unpaid") === "true") {
-      clearSession();
-      window.history.replaceState({}, "", window.location.pathname);
-      return;
-    }
-    if (params.get("unauthorized") === "true") {
-      clearSession();
-      setError("Session expired or access denied. Please sign in again.");
-      window.history.replaceState({}, "", window.location.pathname);
-      return;
-    }
 
   if (sessionParam) {
     try {

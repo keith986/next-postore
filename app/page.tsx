@@ -101,7 +101,7 @@ export default function LoginPage() {
       return;
     }
     if (params.get("unpaid") === "true") {
-      //clearSession();
+      clearSession();
       setWarnMsg("Your account is not yet active. Complete payment to access your dashboard.");
       window.history.replaceState({}, "", window.location.pathname);
       return;
