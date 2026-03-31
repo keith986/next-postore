@@ -428,10 +428,12 @@ useEffect(() => {
   }
 
   const user = getStoredUser();
+
   if (!user) {
     window.location.href = "https://pos.upendoapps.com";
     return;
   }
+  
   setAdminUser(user);
   setChecked(true);
 }, []);

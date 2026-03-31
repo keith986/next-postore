@@ -264,21 +264,6 @@ useEffect(() => {
     if (!parsed.id || !parsed.full_name) throw new Error();
     if (!parsed.pos_type) { window.location.href = "/onboarding"; return; }
     setUser(parsed);
-
-    // Verify session in background — don't block render
-    fetch("/api/auth/verify-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: parsed.id, role: parsed.role }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (!data.valid) {
-          localStorage.removeItem("user");
-          window.location.href = "https://pos.upendoapps.com?unauthorized=true";
-        }
-      })
-      .catch(() => { /* network error — allow through */ });
   } catch {
     localStorage.removeItem("user");
     window.location.href = "https://pos.upendoapps.com";

@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { StoreProvider } from "@/app/_lib/StoreContext";
-import Link from "next/link";
 import Sidebar from "./Sidebar";
 import IdleTimeoutWarning from "../components/IdleTimeoutWarning";
 
@@ -319,104 +316,10 @@ const css = `
   }
 `;
 
-interface StoredUser {
-  id:         string;
-  full_name:  string;
-  role:       string;
-  domain?:    string;
-  pos_type?:  string;
-}
 
-function getStoredUser(): StoredUser | null {
-  if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem("user") ?? "null"); }
-  catch { return null; }
-}
-
-function VerifyingScreen() {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#f5f4f0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 10, background: "#141410", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 700 }}>P</div>
-      <div style={{ width: 22, height: 22, border: "2px solid #e2e0d8", borderTopColor: "#141410", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
-}
-
-function PaymentWall({ onLogout }: { onLogout: () => void }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#f5f4f0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif", padding: "2rem" }}>
-      <div style={{ background: "#fff", border: "1px solid #e2e0d8", borderRadius: 16, padding: "2.5rem", maxWidth: 440, width: "100%", textAlign: "center", boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", fontSize: 24 }}>🔒</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#141410", marginBottom: 8 }}>Subscription Required</h2>
-        <p style={{ fontSize: 14, color: "#9a9a8e", lineHeight: 1.65, marginBottom: "1.75rem" }}>
-          Your account isn&apos;t active yet. Complete your payment to unlock your full dashboard and start selling.
-        </p>
-        <Link href="/payment?signup=true" style={{ display: "block", padding: "12px 0", background: "#141410", color: "#fff", borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: "0.75rem" }}>
-          Complete Payment →
-        </Link>
-        <button onClick={onLogout} style={{ width: "100%", padding: "11px 0", background: "none", color: "#9a9a8e", border: "1px solid #e2e0d8", borderRadius: 9, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-          Sign out
-        </button>
-        <p style={{ fontSize: 11, color: "#c8c6bc", marginTop: "1.25rem" }}>Already paid? Contact support.</p>
-      </div>
-    </div>
-  );
-}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const [status, setStatus] = useState<"checking" | "ok" | "unpaid" | "invalid">("checking");
-
-  useEffect(() => {
-    const user = getStoredUser();
-
-    /* No session */
-    if (!user?.id || !user?.role) {
-      router.replace("/?unauthorized=true");
-      return;
-    }
-
-    /* Wrong role */
-    if (user.role !== "admin") {
-      router.replace("/?unauthorized=true");
-      return;
-    }
-
-    /* Verify with server */
-    fetch("/api/auth/verify-session", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ user_id: user.id, role: user.role }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (!data.valid) {
-          localStorage.removeItem("user");
-          router.replace("/?unauthorized=true");
-          return;
-        }
-        if (data.payment_status === "unpaid") {
-          setStatus("unpaid");
-          return;
-        }
-        setStatus("ok");
-      })
-      .catch(() => setStatus("ok")); // network error — allow through
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("read_notifs");
-    router.replace("/?logout=true");
-  };
-
-  if (status === "checking") return <VerifyingScreen />;
-  if (status === "unpaid")   return <PaymentWall onLogout={handleLogout} />;
-  if (status === "invalid")  return null;
-
+ 
   return (
     <StoreProvider>
       <IdleTimeoutWarning />
