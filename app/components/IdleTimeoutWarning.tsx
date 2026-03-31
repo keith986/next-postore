@@ -11,7 +11,7 @@ export default function IdleTimeoutWarning() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("read_notifs");
-    router.push("/login");
+    router.push("/");
   };
 
   useIdleTimeout({

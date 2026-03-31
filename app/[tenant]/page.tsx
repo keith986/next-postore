@@ -41,10 +41,6 @@ export default function TenantPage() {
       .then(r => r.json())
       .then(data => {
 
-          console.log('verify-session response:', JSON.stringify(data))
-          console.log('user from localStorage:', JSON.stringify(user))
-          console.log('tenant param:', tenant)
-
         if (!data.valid) {
           localStorage.removeItem('user')
           window.location.href = 'https://pos.upendoapps.com?unauthorized=true'

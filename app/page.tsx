@@ -74,6 +74,7 @@ function getStoredUser() {
     localStorage.removeItem("read_notifs");
      return null; }
 }
+
 function clearSession() {
   if (typeof window === "undefined") return;
   localStorage.removeItem("user");
@@ -92,8 +93,9 @@ export default function LoginPage() {
   /* ── On mount: handle URL flags + auto-login ── */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
+    //const params = new URLSearchParams(window.location.search);
 
+    /*
     if (params.get("logout") === "true") {
       clearSession();
       window.history.replaceState({}, "", window.location.pathname);
@@ -111,6 +113,7 @@ export default function LoginPage() {
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+    */
 
     /* Auto-login if valid session exists */
     const user = getStoredUser();
@@ -148,10 +151,10 @@ export default function LoginPage() {
   const doRedirect = (user: Record<string, string>) => {
     setRedirecting(true);
     if (user.role === "admin" && user.domain) {
-      //const encoded = encodeURIComponent(JSON.stringify(user));
+      const encoded = encodeURIComponent(JSON.stringify(user));
       localStorage.setItem("user", JSON.stringify(user));
-      //window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
+      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
+      //window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
       return;
     }
     if (user.role === "staff" && user.admin_id) {
