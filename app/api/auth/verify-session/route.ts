@@ -36,16 +36,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Admin — check active subscription first
-    /*
+  
     const [subRows] = await pool.query(
-      "SELECT id FROM mpesa_transactions WHERE user_id = ? AND status = 'completed' LIMIT 1",
+      "SELECT id FROM subscriptions WHERE user_id = ? AND status = 'active' LIMIT 1",
       [user_id]
     ) as [{ id: string }[], unknown];
 
     if (subRows.length) {
       return NextResponse.json({ valid: true, payment_status: "active" });
     }
-    */
 
     // Fall back to checking for a completed M-Pesa transaction
     // (handles cases where subscription row wasn't created yet)

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS, POS_PRICES, getPrice } from "@/app/_lib/pricing";
 import type { PlanId, PosType } from "@/app/_lib/pricing";
@@ -237,7 +237,7 @@ export default function PaymentPage() {
 
     const userId = isNewSignup
       ? `pending_${pendingSignup?.email?.replace(/[^a-z0-9]/gi, "_")}`
-      : user?.id;
+    : user?.id;
 
     try {
       const res  = await fetch("/api/mpesa/stk", {
@@ -503,7 +503,7 @@ export default function PaymentPage() {
         </div>
 
         <p style={{ fontSize: 12, color: "#c8c6bc", marginTop: "1.5rem", textAlign: "center" }}>
-          Cancel anytime · No hidden fees · Powered by M-Pesa
+          Cancel anytime · No hidden fees 
         </p>
       </div>
     </>

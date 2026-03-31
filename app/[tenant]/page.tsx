@@ -41,13 +41,15 @@ export default function TenantPage() {
       .then(r => r.json())
       .then(data => {
         if (!data.valid) {
-          localStorage.removeItem('user')
+          localStorage.removeItem('user');
+          localStorage.removeItem("read_notifs");
           window.location.href = 'https://pos.upendoapps.com?unauthorized=true'
           return
         }
 
         if (data.payment_status !== 'active') {
           localStorage.removeItem('user')
+          localStorage.removeItem("read_notifs");
           window.location.href = 'https://pos.upendoapps.com?unpaid=true'
           return
         }
