@@ -87,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     /* ── 6. No payment found ── */
     return NextResponse.json({
-      valid:          true,
+      valid:          false,
       payment_status: "unpaid",
       plan:           null,
     });
@@ -96,9 +96,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.error("[verify-session]", (error as Error).message);
     /* On DB error allow through — don't lock users out */
     return NextResponse.json({
-      valid:          true,
-      payment_status: "active",
-      plan:           "starter",
+      valid:          false,
+      payment_status: "unpaid",
+      plan:           "null",
     });
   }
 }
