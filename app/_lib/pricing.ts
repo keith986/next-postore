@@ -1,5 +1,5 @@
-export type PlanId   = "starter" | "pro" | "enterprise";
-export type PosType  = "retail" | "restaurant" | "salon" | "wholesale" | "pharmacy";
+export type PlanId  = "starter" | "pro" | "enterprise";
+export type PosType = "retail" | "restaurant" | "salon" | "wholesale" | "pharmacy";
 
 export interface Plan {
   id:          PlanId;
@@ -11,11 +11,14 @@ export interface Plan {
 }
 
 export interface PosPrice {
-  posType:  PosType;
-  label:    string;
-  prices:   Record<PlanId, number>;
+  posType: PosType;
+  label:   string;
+  prices:  Record<PlanId, number>;
 }
 
+// ─────────────────────────────────────────
+// PLANS
+// ─────────────────────────────────────────
 export const PLANS: Plan[] = [
   {
     id:          "starter",
@@ -25,7 +28,10 @@ export const PLANS: Plan[] = [
     features: [
       "Up to 2 staff accounts",
       "500 products",
-      "Basic analytics",
+      "Overview & Orders",
+      "Products, Menu & Services",
+      "Suppliers & Price Tiers",
+      "Prescriptions & Drugs",
       "Email support",
     ],
   },
@@ -36,11 +42,13 @@ export const PLANS: Plan[] = [
     highlight:   true,
     badge:       "Most Popular",
     features: [
+      "Everything in Starter",
       "Up to 10 staff accounts",
       "Unlimited products",
+      "Inventory management",
       "Advanced analytics",
+      "Tables & Appointments",
       "Priority support",
-      "Custom subdomain",
     ],
   },
   {
@@ -49,9 +57,10 @@ export const PLANS: Plan[] = [
     description: "For large businesses with advanced needs.",
     highlight:   false,
     features: [
+      "Everything in Pro",
       "Unlimited staff accounts",
-      "Unlimited products",
       "Full analytics suite",
+      "Customers / Patients management",
       "24/7 dedicated support",
       "Custom integrations",
       "SLA guarantee",
@@ -59,6 +68,9 @@ export const PLANS: Plan[] = [
   },
 ];
 
+// ─────────────────────────────────────────
+// PRICING
+// ─────────────────────────────────────────
 export const POS_PRICES: PosPrice[] = [
   {
     posType: "retail",
@@ -90,4 +102,54 @@ export const POS_PRICES: PosPrice[] = [
 export function getPrice(posType: PosType, plan: PlanId): number {
   const pos = POS_PRICES.find(p => p.posType === posType);
   return pos?.prices[plan] ?? 999;
+}
+
+// ─────────────────────────────────────────
+// PLAN ORDER  (used for comparisons)
+// ─────────────────────────────────────────
+export const PLAN_ORDER: PlanId[] = ["starter", "pro", "enterprise"];
+
+// ─────────────────────────────────────────
+// ROUTE ACCESS GATES
+//
+// Only routes listed here are restricted.
+// Any route NOT listed is accessible on ALL plans.
+//
+// Starter  → Overview, Orders, all Store section,
+//            Products, Menu, Services, Suppliers,
+//            Price Tiers, Prescriptions, Drugs
+// Pro      → + Inventory, Analytics, Tables, Appointments
+// Enterprise → + Customers / Patients
+// ─────────────────────────────────────────
+export const ROUTE_MIN_PLAN: Record<string, PlanId> = {
+  // ── Requires Pro ──
+  "/admin/inventory":    "pro",
+  "/admin/analytics":    "pro",
+  "/admin/tables":       "pro",   // restaurant: floor / table management
+  "/admin/appointments": "pro",   // salon: appointment calendar
+
+  // ── Requires Enterprise ──
+  "/admin/customers":    "enterprise",
+  "/admin/patients":     "enterprise", // pharmacy alias for customers
+};
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+
+/** Returns true when the given plan cannot access this route. */
+export function isRouteLocked(href: string, plan: PlanId = "starter"): boolean {
+  const minPlan = ROUTE_MIN_PLAN[href];
+  if (!minPlan) return false;
+  return PLAN_ORDER.indexOf(plan) < PLAN_ORDER.indexOf(minPlan);
+}
+
+/** Returns the minimum plan required for a route, or null if unrestricted. */
+export function requiredPlan(href: string): PlanId | null {
+  return ROUTE_MIN_PLAN[href] ?? null;
+}
+
+/** Human-readable plan label. */
+export function planLabel(plan: PlanId): string {
+  return plan.charAt(0).toUpperCase() + plan.slice(1);
 }

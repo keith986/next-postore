@@ -1,25 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/app/_lib/db";
 
+/* ── POST /api/auth/verify-session
+   Body: { user_id: string, role: string }
+   Returns:
+     { valid: false }
+     { valid: true, payment_status: "unpaid",  plan: null }
+     { valid: true, payment_status: "active",  plan: "starter"|"pro"|"enterprise" }
+── */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { user_id, role } = await request.json();
-    if (!user_id || !role) return NextResponse.json({ valid: false });
+
+    if (!user_id || !role)
+      return NextResponse.json({ valid: false });
 
     const pool = await getPool();
 
-    // Check users table
-    let foundRole: string | null = null;
+    /* ── 1. Check user exists in users table ── */
     const [userRows] = await pool.query(
       "SELECT id, role FROM users WHERE id = ? LIMIT 1",
       [user_id]
     ) as [{ id: string; role: string }[], unknown];
 
+    let foundRole: string | null = null;
+
     if (userRows.length && userRows[0].role === role) {
       foundRole = userRows[0].role;
     }
 
-    // Staff may live in the staff table instead
+    /* ── 2. If not found in users, check staff table ── */
     if (!foundRole && role === "staff") {
       const [staffRows] = await pool.query(
         "SELECT id FROM staff WHERE id = ? AND status = 'active' LIMIT 1",
@@ -30,34 +40,65 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!foundRole) return NextResponse.json({ valid: false });
 
-    // Staff don't need a subscription check
+    /* ── 3. Staff don't need a subscription check ── */
     if (foundRole === "staff") {
-      return NextResponse.json({ valid: true, payment_status: "active" });
+      return NextResponse.json({
+        valid:          true,
+        payment_status: "active",
+        plan:           "starter",
+      });
     }
 
-    // Admin — check active subscription first
-  
+    /* ── 4. Admin — check active subscription first ── */
     const [subRows] = await pool.query(
-      "SELECT id FROM subscriptions WHERE user_id = ? AND status = 'active' LIMIT 1",
+      `SELECT plan, status
+       FROM subscriptions
+       WHERE user_id = ? AND status = 'active'
+       LIMIT 1`,
       [user_id]
-    ) as [{ id: string }[], unknown];
+    ) as [{ plan: string; status: string }[], unknown];
 
-    if (subRows.length) {
-      return NextResponse.json({ valid: true, payment_status: "active" });
+    if (subRows.length > 0) {
+      return NextResponse.json({
+        valid:          true,
+        payment_status: "active",
+        plan:           subRows[0].plan,
+      });
     }
 
-    // Fall back to checking for a completed M-Pesa transaction
-    // (handles cases where subscription row wasn't created yet)
+    /* ── 5. Fall back to last completed M-Pesa transaction ──
+           (covers gap between payment and subscription row creation) */
     const [txRows] = await pool.query(
-      "SELECT id FROM mpesa_transactions WHERE user_id = ? AND status = 'completed' LIMIT 1",
+      `SELECT plan
+       FROM mpesa_transactions
+       WHERE user_id = ? AND status = 'completed'
+       ORDER BY created_at DESC
+       LIMIT 1`,
       [user_id]
-    ) as [{ id: string }[], unknown];
+    ) as [{ plan: string }[], unknown];
 
-    const payment_status = txRows.length > 0 ? "active" : "unpaid";
-    return NextResponse.json({ valid: true, payment_status });
+    if (txRows.length > 0) {
+      return NextResponse.json({
+        valid:          true,
+        payment_status: "active",
+        plan:           txRows[0].plan,
+      });
+    }
+
+    /* ── 6. No payment found ── */
+    return NextResponse.json({
+      valid:          true,
+      payment_status: "unpaid",
+      plan:           null,
+    });
 
   } catch (error) {
     console.error("[verify-session]", (error as Error).message);
-    return NextResponse.json({ valid: true, payment_status: "active" });
+    /* On DB error allow through — don't lock users out */
+    return NextResponse.json({
+      valid:          true,
+      payment_status: "active",
+      plan:           "starter",
+    });
   }
 }
