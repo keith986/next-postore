@@ -8,65 +8,79 @@ export default function TenantPage() {
   const tenant = params.tenant as string
 
   useEffect(() => {
-    const stored = localStorage.getItem('user')
-
-    if (!stored) {
-      window.location.href = 'https://pos.upendoapps.com'
-      return
-    }
-
-    let user: Record<string, string>
+  // First check for session param (coming from login)
+  const params = new URLSearchParams(window.location.search);
+  const sessionParam = params.get('session');
+  
+  if (sessionParam) {
     try {
-      user = JSON.parse(stored)
+      const user = JSON.parse(decodeURIComponent(sessionParam));
+      // Seed this subdomain's localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      // Clean URL then proceed to dashboard
+      window.history.replaceState({}, '', window.location.pathname);
+      const encoded = encodeURIComponent(JSON.stringify(user));
+      const dest = user.role === 'staff' ? 'staff' : 'admin';
+      window.location.href = `/${dest}/dashboard?session=${encoded}`;
+      return;
     } catch {
-      localStorage.removeItem('user')
-      window.location.href = 'https://pos.upendoapps.com'
-      return
+      window.location.href = 'https://pos.upendoapps.com';
+      return;
     }
+  }
 
-    // Wrong subdomain for this user
-    if (user.domain !== tenant) {
-      window.location.href = user.domain
-        ? `https://${user.domain}.upendoapps.com`
-        : 'https://pos.upendoapps.com'
-      return
-    }
+  // No session param — check localStorage (returning user)
+  const stored = localStorage.getItem('user');
+  if (!stored) {
+    window.location.href = 'https://pos.upendoapps.com';
+    return;
+  }
 
-    // Verify session server-side
-    fetch('/api/auth/verify-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, role: user.role }),
+  let user: Record<string, string>;
+  try {
+    user = JSON.parse(stored);
+  } catch {
+    localStorage.removeItem('user');
+    window.location.href = 'https://pos.upendoapps.com';
+    return;
+  }
+
+  if (user.domain !== tenant) {
+    window.location.href = user.domain
+      ? `https://${user.domain}.upendoapps.com`
+      : 'https://pos.upendoapps.com';
+    return;
+  }
+
+  // Verify returning user session
+  fetch('/api/auth/verify-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: user.id, role: user.role }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.valid) {
+        localStorage.removeItem('user');
+        window.location.href = 'https://pos.upendoapps.com?unauthorized=true';
+        return;
+      }
+      if (data.payment_status !== 'active') {
+        localStorage.removeItem('user');
+        window.location.href = 'https://pos.upendoapps.com?unpaid=true';
+        return;
+      }
+      const encoded = encodeURIComponent(JSON.stringify(user));
+      const dest = user.role === 'staff' ? 'staff' : 'admin';
+      window.location.href = `/${dest}/dashboard?session=${encoded}`;
     })
-      .then(r => r.json())
-      .then(data => {
+    .catch(() => {
+      const encoded = encodeURIComponent(JSON.stringify(user));
+      const dest = user.role === 'staff' ? 'staff' : 'admin';
+      window.location.href = `/${dest}/dashboard?session=${encoded}`;
+    });
 
-        if (!data.valid) {
-          localStorage.removeItem('user')
-          window.location.href = 'https://pos.upendoapps.com?unauthorized=true'
-          return
-        }
-
-        if (data.payment_status !== 'active') {
-          localStorage.removeItem('user')
-          window.location.href = 'https://pos.upendoapps.com?unpaid=true'
-          return
-        }
-
-        // ✅ Carry user data to dashboard via session param
-        // so dashboard can seed its own localStorage on this subdomain
-        const encoded = encodeURIComponent(JSON.stringify(user))
-        const dest = user.role === 'staff' ? 'staff' : 'admin'
-        window.location.href = `/${dest}/dashboard?session=${encoded}`
-      })
-      .catch(() => {
-        // Network error — allow through with session param
-        const encoded = encodeURIComponent(JSON.stringify(user))
-        const dest = user.role === 'staff' ? 'staff' : 'admin'
-        window.location.href = `/${dest}/dashboard?session=${encoded}`
-      })
-
-  }, [tenant])
+}, [tenant])
 
   return (
     <div style={{

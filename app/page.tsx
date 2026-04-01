@@ -151,11 +151,10 @@ export default function LoginPage() {
   const doRedirect = (user: Record<string, string>) => {
     setRedirecting(true);
     if (user.role === "admin" && user.domain) {
-      //const encoded = encodeURIComponent(JSON.stringify(user));
-      localStorage.setItem("user", JSON.stringify(user));
-      //window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard?session=${encoded}`;
-      window.location.href = `https://${user.domain}.upendoapps.com/admin/dashboard`;
-      return;
+    const encoded = encodeURIComponent(JSON.stringify(user));
+    // Send to tenant root WITH session param
+    window.location.href = `https://${user.domain}.upendoapps.com?session=${encoded}`;
+    return;
     }
     if (user.role === "staff" && user.admin_id) {
       fetch(`/api/admin-domain?admin_id=${user.admin_id}`)
