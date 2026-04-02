@@ -409,36 +409,6 @@ export default function AdminDashboard() {
   const [fetching,  setFetching] = useState(true);
   const [error,     setError]    = useState<string | null>(null);
  
- /* 
-useEffect(() => {
-  const params       = new URLSearchParams(window.location.search);
-  const sessionParam = params.get("session");
-
-  if (sessionParam) {
-    try {
-      const user = JSON.parse(decodeURIComponent(sessionParam));
-      // Just write it — they came from a fresh verified login
-      localStorage.setItem("user", JSON.stringify(user));
-      window.history.replaceState({}, "", window.location.pathname);
-      setAdminUser(user);
-      setChecked(true);
-    } catch {
-      window.location.href = "https://pos.upendoapps.com";
-    }
-    return; // ← critical: stop here, don't fall through
-  }
-
-  const user = getStoredUser();
-
-  if (!user) {
-    window.location.href = "https://pos.upendoapps.com";
-    return;
-  }
-
-  setAdminUser(user);
-  setChecked(true);
-}, []);
-*/
 
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);

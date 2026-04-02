@@ -135,7 +135,7 @@ export default function LoginPage() {
           setError("Session expired. Please sign in again.");
           return;
         }
-        if (data.payment_status === "unpaid") {
+        if (data.payment_status !== "active") {
           clearSession();
           setRedirecting(false);
           setWarnMsg("Your account is not active. Complete payment to continue.");
@@ -176,44 +176,45 @@ export default function LoginPage() {
   };
 
   /* ── Login submit ── */
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(""); setWarnMsg("");
-    if (!email || !password) return setError("Please fill in all fields.");
-    setLoading(true);
+ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError(""); setWarnMsg("");
+  if (!email || !password) return setError("Please fill in all fields.");
+  setLoading(true);
 
-    try {
-      const res  = await fetch("/api/auth/login", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+  try {
+    const res  = await fetch("/api/auth/login", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
 
-      if (data.error) { setError(data.error); setLoading(false); return; }
+    // Any error message from server
+    if (data.error) { setError(data.error); setLoading(false); return; }
 
-      /* Payment gate — account exists but not paid */
-      if (data.user?.payment_status === "unpaid") {
-        setWarnMsg("Your account isn't active yet. Please complete payment to access your store.");
-        setLoading(false);
-        return;
-      }
-
-      /* Onboarding gate — no POS type selected yet */
-      if (!data.user?.pos_type) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        router.push("/onboarding");
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
-      doRedirect(data.user);
-
-    } catch {
-      setError("Something went wrong. Please try again.");
+    // Payment required — catches both old requiresPayment and new payment_status
+    if (res.status === 402 || data.requiresPayment || data.user?.payment_status === "unpaid") {
+      setWarnMsg("Your account isn't active yet. Please complete payment to access your store.");
       setLoading(false);
+      return;
     }
-  };
+
+    // Onboarding gate
+    if (!data.user?.pos_type) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push("/onboarding");
+      return;
+    }
+
+    localStorage.setItem("user", JSON.stringify(data.user));
+    doRedirect(data.user);
+
+  } catch {
+    setError("Something went wrong. Please try again.");
+    setLoading(false);
+  }
+ };
 
   if (redirecting) return (
     <>

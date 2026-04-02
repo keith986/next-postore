@@ -49,48 +49,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    /* ── 4. Admin — check active subscription first ── */
-    const [subRows] = await pool.query(
-      `SELECT plan, status
-       FROM subscriptions
-       WHERE user_id = ? AND status = 'active'
-       LIMIT 1`,
-      [user_id]
-    ) as [{ plan: string; status: string }[], unknown];
+    /* ── 4. Admin — check subscription status ── */
+const [subRows] = await pool.query(
+  `SELECT plan, status FROM subscriptions WHERE user_id = ? LIMIT 1`,
+  [user_id]
+) as [{ plan: string; status: string }[], unknown];
 
-    if (subRows.length > 0) {
-      return NextResponse.json({
-        valid:          true,
-        payment_status: "active",
-        plan:           subRows[0].plan,
-      });
-    }
-
-    /* ── 5. Fall back to last completed M-Pesa transaction ──
-           (covers gap between payment and subscription row creation) */
-    const [txRows] = await pool.query(
-      `SELECT plan
-       FROM mpesa_transactions
-       WHERE user_id = ? AND status = 'completed'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [user_id]
-    ) as [{ plan: string }[], unknown];
-
-    if (txRows.length > 0) {
-      return NextResponse.json({
-        valid:          true,
-        payment_status: "active",
-        plan:           txRows[0].plan,
-      });
-    }
-
-    /* ── 6. No payment found ── */
+// Subscription exists
+if (subRows.length > 0) {
+  if (subRows[0].status === "active") {
     return NextResponse.json({
-      valid:          false,
-      payment_status: "unpaid",
-      plan:           null,
+      valid: true, payment_status: "active", plan: subRows[0].plan,
     });
+  }
+  // Subscription exists but cancelled/expired — block immediately, no mpesa fallback
+  return NextResponse.json({
+    valid: false, payment_status: "unpaid", plan: null,
+  });
+}
+
+// No subscription row at all — check mpesa as fallback
+const [txRows] = await pool.query(
+  `SELECT plan FROM mpesa_transactions
+   WHERE user_id = ? AND status = 'completed'
+   ORDER BY created_at DESC LIMIT 1`,
+  [user_id]
+) as [{ plan: string }[], unknown];
+
+if (txRows.length > 0) {
+  return NextResponse.json({
+    valid: true, payment_status: "active", plan: txRows[0].plan,
+  });
+}
+
+return NextResponse.json({ valid: false, payment_status: "unpaid", plan: null });
 
   } catch (error) {
     console.error("[verify-session]", (error as Error).message);

@@ -70,22 +70,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
 
       // ── Check subscription for admin ──
-      if (user.role === "admin") {
-        const [subRows] = await pool.query<SubRow[]>(
-          "SELECT status FROM subscriptions WHERE user_id = ? LIMIT 1",
-          [user.id]
-        );
+  if (user.role === "admin") {
+        // Check active subscription first
+  const [subRows] = await pool.query<SubRow[]>(
+    "SELECT status, plan FROM subscriptions WHERE user_id = ? LIMIT 1",
+    [user.id]
+  ) as [{ status: string; plan: string }[], unknown];
 
-        const hasActiveSub = subRows.length > 0 && subRows[0].status === "active";
+  const activeSub = subRows.find(s => s.status === "active");
 
-        if (!hasActiveSub) {
-          const { password: _, ...safeUser } = user;
-          return NextResponse.json({
-            requiresPayment: true,
-            user:            safeUser,
-          }, { status: 402 });
-        }
-      }
+  if (activeSub) {
+    const { password: _, ...safeUser } = user;
+    return NextResponse.json({
+      success: true,
+      user: { ...safeUser, plan: activeSub.plan, payment_status: "active" },
+    });
+  }
+
+   // Fall back to completed mpesa transaction
+  const [txRows] = await pool.query(
+    `SELECT plan FROM mpesa_transactions
+     WHERE user_id = ? AND status = 'completed'
+     ORDER BY created_at DESC LIMIT 1`,
+    [user.id]
+  ) as [{ plan: string }[], unknown];
+
+  if (txRows.length > 0) {
+    const { password: _, ...safeUser } = user;
+    return NextResponse.json({
+      success: true,
+      user: { ...safeUser, plan: txRows[0].plan, payment_status: "active" },
+    });
+  }
+
+  // No valid payment — block
+  const { password: _, ...safeUser } = user;
+  return NextResponse.json({
+    user: { ...safeUser, payment_status: "unpaid", plan: null },
+  }, { status: 402 });
+
+  }
 
       const { password: _, ...safeUser } = user;
       return NextResponse.json({ success: true, user: safeUser });
