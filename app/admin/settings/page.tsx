@@ -524,7 +524,7 @@ export default function AdminSettingsPage() {
                         <div>
                           <label style={labelStyle}>Domain</label>
                           <div style={{ display: "flex", alignItems: "stretch", background: "#f5f4f0", border: "1px solid #c8c6bc", borderRadius: 8, overflow: "hidden" }}>
-                            <input style={{ ...fieldStyle, border: "none", background: "transparent", flex: 1 }} value={store.domain} onChange={e => setStore(s => ({ ...s, domain: e.target.value }))} />
+                            <input style={{ ...fieldStyle, border: "none", background: "transparent", flex: 1 }} value={store.domain} onChange={e => setStore(s => ({ ...s, domain: e.target.value }))} readOnly={true} />
                             <span style={{ padding: "0 12px", background: "#e2e0d8", fontSize: 12, fontWeight: 500, color: "#4a4a40", display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>.postore.app</span>
                           </div>
                         </div>
