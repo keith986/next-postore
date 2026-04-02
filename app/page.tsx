@@ -199,13 +199,14 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
+    if(data.user?.role === 'admin'){
     // Onboarding gate
     if (!data.user?.pos_type) {
       localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/onboarding");
       return;
     }
+  }
 
     localStorage.setItem("user", JSON.stringify(data.user));
     doRedirect(data.user);
