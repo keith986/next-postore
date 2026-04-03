@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useIdleTimeout } from "@/app/hooks/useIdleTimeout";
 import { useRouter } from "next/navigation";
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
 function getIsLoggedIn() {
   if (typeof window === "undefined") return false;
   try {
@@ -13,17 +15,67 @@ function getIsLoggedIn() {
   }
 }
 
+function clearSession() {
+  localStorage.removeItem("user");
+  localStorage.removeItem("read_notifs");
+  localStorage.removeItem("tab_close_time");
+}
+
 export default function IdleTimeoutWarning() {
   const [showWarning, setShowWarning] = useState(false);
   const [countdown,   setCountdown]   = useState(300);
-  // Initialize directly — no useEffect needed, no setState-in-effect error
   const [isLoggedIn]                  = useState(getIsLoggedIn);
   const router = useRouter();
 
+  // ── On mount: check if tab was closed for more than 30 mins ──
+  useEffect(() => {
+    const closeTime = localStorage.getItem("tab_close_time");
+    if (closeTime) {
+      const elapsed = Date.now() - parseInt(closeTime, 10);
+      if (elapsed >= SESSION_TIMEOUT_MS) {
+        clearSession();
+        router.replace("/");
+        return;
+      }
+    }
+    // Clear the close time since tab is now open
+    localStorage.removeItem("tab_close_time");
+
+    // Save timestamp when tab is closed/hidden
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        localStorage.setItem("tab_close_time", Date.now().toString());
+      } else {
+        // Tab became visible again — check elapsed time
+        const t = localStorage.getItem("tab_close_time");
+        if (t) {
+          const elapsed = Date.now() - parseInt(t, 10);
+          if (elapsed >= SESSION_TIMEOUT_MS) {
+            clearSession();
+            router.replace("/");
+            return;
+          }
+          localStorage.removeItem("tab_close_time");
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      localStorage.setItem("tab_close_time", Date.now().toString());
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [router]);
+
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("read_notifs");
-    router.push("/");
+    clearSession();
+    router.replace("/");
   };
 
   useIdleTimeout({
@@ -37,15 +89,17 @@ export default function IdleTimeoutWarning() {
     onLogout: handleLogout,
   });
 
-  // Countdown ticker
+  // ── Countdown ticker — auto logout when it hits 0 ──
   useEffect(() => {
     if (!showWarning) return;
-    if (countdown <= 0) return;
 
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(interval);
+          // Auto logout when countdown depletes
+          clearSession();
+          router.replace("/");
           return 0;
         }
         return prev - 1;
@@ -53,7 +107,8 @@ export default function IdleTimeoutWarning() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [showWarning, countdown]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showWarning]);
 
   if (!isLoggedIn) return null;
   if (!showWarning) return null;
@@ -99,7 +154,10 @@ export default function IdleTimeoutWarning() {
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button
-            onClick={() => setShowWarning(false)}
+            onClick={() => {
+              setShowWarning(false);
+              setCountdown(300);
+            }}
             style={{
               padding: "10px 24px", background: "#141410",
               color: "#fff", border: "none", borderRadius: 8,
