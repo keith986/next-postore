@@ -66,7 +66,7 @@ function ResetForm() {
 
   useEffect(() => {
     if (!token) { setValidating(false); return; }
-    fetch(`/api/auth/reset-password?token=${token}`)
+    fetch(`/api/reset-password?token=${token}`)
       .then(r => r.json())
       .then(d => { setTokenValid(d.valid); setValidating(false); })
       .catch(() => setValidating(false));
