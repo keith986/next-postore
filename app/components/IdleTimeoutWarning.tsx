@@ -35,6 +35,7 @@ export default function IdleTimeoutWarning() {
       if (elapsed >= SESSION_TIMEOUT_MS) {
         clearSession();
         router.replace("/");
+        window.location.reload();
         return;
       }
     }
@@ -53,6 +54,7 @@ export default function IdleTimeoutWarning() {
           if (elapsed >= SESSION_TIMEOUT_MS) {
             clearSession();
             router.replace("/");
+            window.location.reload(); // Force reload to reset state and show login screen
             return;
           }
           localStorage.removeItem("tab_close_time");
