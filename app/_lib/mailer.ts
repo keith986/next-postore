@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 
 export async function sendPasswordResetEmail(
   to: string,
-  resetUrl: string,
+  resetUrl: string,  
   storeName?: string
 ): Promise<void> {
   const displayName = storeName ?? "POStore";
