@@ -11,6 +11,8 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
+  debug: true,
+  logger: true
 }); 
 
 export async function sendPasswordResetEmail(
@@ -20,6 +22,16 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const displayName = storeName ?? "POStore";
 
+  // ── 2. Verify transporter can connect to Gmail ──
+  try {
+    await transporter.verify();
+    console.log("✅ SMTP connection verified — Gmail is reachable");
+  } catch (verifyError) {
+    console.error("❌ SMTP verify failed:", verifyError);
+    throw verifyError; // bubble up so API returns real error
+  }
+
+  try{
   await transporter.sendMail({
     from: `"${displayName}" <${process.env.GMAIL_USER}>`,
     to,
@@ -122,4 +134,7 @@ export async function sendPasswordResetEmail(
     `,
     text: `Reset your password\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, ignore this email.`,
   });
+  }catch(sendError){
+    throw sendError;
+  }
 }

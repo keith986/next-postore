@@ -37,9 +37,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const resetUrl = `https://pos.upendoapps.com/reset-password?token=${token}`;
 
-    await sendPasswordResetEmail(email, resetUrl, rows[0].store_name ?? undefined);
+    const sendMails = await sendPasswordResetEmail(email, resetUrl, rows[0].store_name ?? undefined);
 
-    return NextResponse.json({ success: true });
+    if(sendMails !== undefined){
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ success: false, error: "Failed to send email" }, { status: 500 });
+
   } catch (error) {
     console.error("Forgot password error:", error);
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
