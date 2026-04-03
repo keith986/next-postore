@@ -54,11 +54,6 @@ export async function sendPasswordResetEmail(
                   <td style="padding:32px 32px 24px;border-bottom:1px solid #e2e0d8;text-align:center;">
                   <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
                     <tr>
-                     <td>
-                       <div style="width:36px;height:36px;background:#141410;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:36px;">
-                        <span style="color:#ffffff;font-size:16px;font-weight:700;">P</span>
-                       </div>
-                     </td>
                     <td style="padding-left:10px;">
                       <span style="font-size:15px;font-weight:600;color:#141410;">${displayName}</span>
                     </td>
@@ -70,14 +65,6 @@ export async function sendPasswordResetEmail(
                 <!-- Body -->
                 <tr>
                   <td style="padding:32px;">
-                    
-                    <!-- Icon -->
-                    <div style="width:52px;height:52px;background:#fff4f0;border:1px solid #fde8d8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4522a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                     </svg>
-                    </div>
 
                     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#141410;letter-spacing:-0.5px;">
                       Reset your password
@@ -112,11 +99,6 @@ export async function sendPasswordResetEmail(
                     <!-- Security note -->
                     <div style="margin-top:24px;padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
                     <p style="margin:0;font-size:12px;color:#92400e;line-height:1.5;display:flex;align-items:flex-start;gap:8px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
                     If you didn't request this, you can safely ignore this email. Your password won't change.
                     </p>
                     </div>
