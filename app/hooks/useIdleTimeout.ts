@@ -3,8 +3,8 @@ import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface UseIdleTimeoutOptions {
-  timeoutMinutes?: number;  // default 30 mins
-  warningMinutes?: number;  // show warning before logout
+  timeoutMinutes?: number;
+  warningMinutes?: number;
   onWarning?: () => void;
   onLogout?: () => void;
 }
@@ -16,47 +16,46 @@ export function useIdleTimeout({
   onLogout,
 }: UseIdleTimeoutOptions = {}) {
   const router = useRouter();
-  //const timeoutRef = useRef<NodeJS.Timeout>();
-  //const warningRef = useRef<NodeJS.Timeout>();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-
   const logout = useCallback(() => {
     localStorage.removeItem("user");
+    localStorage.removeItem("read_notifs");
     onLogout?.();
-    router.push("/login");
+    router.push("/");
   }, [router, onLogout]);
 
   const resetTimer = useCallback(() => {
-    // Clear existing timers
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (warningRef.current) clearTimeout(warningRef.current);
 
     const timeoutMs = timeoutMinutes * 60 * 1000;
     const warningMs = (timeoutMinutes - warningMinutes) * 60 * 1000;
 
-    // Set warning timer
     warningRef.current = setTimeout(() => {
       onWarning?.();
     }, warningMs);
 
-    // Set logout timer
     timeoutRef.current = setTimeout(() => {
       logout();
     }, timeoutMs);
   }, [timeoutMinutes, warningMinutes, logout, onWarning]);
 
   useEffect(() => {
+    // Only run if a user is logged in
+    const user = (() => {
+      try { return JSON.parse(localStorage.getItem("user") ?? "null"); }
+      catch { return null; }
+    })();
+    if (!user?.id) return;
+
     const events = [
       "mousedown", "mousemove", "keydown",
-      "scroll", "touchstart", "click", "keypress"
+      "scroll", "touchstart", "click", "keypress",
     ];
 
-    // Start timer on mount
     resetTimer();
-
-    // Reset on any activity
     events.forEach(event => window.addEventListener(event, resetTimer));
 
     return () => {

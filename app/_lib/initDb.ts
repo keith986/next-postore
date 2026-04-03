@@ -398,6 +398,21 @@ export async function initDb(): Promise<void> {
   `);
   console.log("✅ Table: subscriptions");
 
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+  id         CHAR(36)     NOT NULL DEFAULT (UUID()),
+  admin_id   CHAR(36)     NOT NULL,
+  type       ENUM('order','login','stock','refund') NOT NULL DEFAULT 'login',
+  title      VARCHAR(255) NOT NULL,
+  message    TEXT         NOT NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_admin_id (admin_id),
+  INDEX idx_created_at (created_at)
+);
+`);
+  console.log("✅ Table: notifications");
+
   // ── SAFE MIGRATIONS (adds columns to existing tables without breaking them) ──
 
   const migrations: { table: string; column: string; sql: string }[] = [

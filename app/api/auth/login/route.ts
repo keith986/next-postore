@@ -31,6 +31,32 @@ interface SubRow extends RowDataPacket {
   status: string;
 }
 
+// Add this helper function near the top of the file, before the POST handler
+async function logLoginNotification(
+  pool: Awaited<ReturnType<typeof getPool>>,
+  adminId: string,
+  loginName: string,
+  role: "admin" | "staff",
+  email: string,
+  request: NextRequest
+) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+          || request.headers.get("x-real-ip")
+          || "unknown";
+
+  const title   = role === "admin"
+    ? `Admin login: ${loginName}`
+    : `Staff login: ${loginName}`;
+
+  const message = `${loginName} (${email}) signed in from IP ${ip}`;
+
+  await pool.query(
+    `INSERT INTO notifications (admin_id, type, title, message)
+     VALUES (?, 'login', ?, ?)`,
+    [adminId, title, message]
+  );
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, password } = await request.json();
 
@@ -81,6 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (activeSub) {
     const { password: _, ...safeUser } = user;
+    await logLoginNotification(pool, user.id, user.full_name, "admin", user.email, request);
     return NextResponse.json({
       success: true,
       user: { ...safeUser, plan: activeSub.plan, payment_status: "active" },
@@ -97,6 +124,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (txRows.length > 0) {
     const { password: _, ...safeUser } = user;
+    await logLoginNotification(pool, user.id, user.full_name, "admin", user.email, request);
     return NextResponse.json({
       success: true,
       user: { ...safeUser, plan: txRows[0].plan, payment_status: "active" },
@@ -105,6 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // No valid payment — block
   const { password: _, ...safeUser } = user;
+  await logLoginNotification(pool, user.id, user.full_name, "admin", user.email, request);
   return NextResponse.json({
     user: { ...safeUser, payment_status: "unpaid", plan: null },
   }, { status: 402 });
@@ -112,6 +141,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
       const { password: _, ...safeUser } = user;
+      await logLoginNotification(pool, user.id, user.full_name, "admin", user.email, request);
       return NextResponse.json({ success: true, user: safeUser });
     }
 
@@ -160,6 +190,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       await pool.query("UPDATE staff SET last_login = NOW() WHERE id = ?", [staff.id]);
 
       const { password: _, ...safeStaff } = staff;
+      await logLoginNotification(pool, staff.admin_id, staff.full_name, "staff", staff.email, request);
       return NextResponse.json({
         success: true,
         user: { ...safeStaff, role: "staff", store_name: null },
