@@ -111,9 +111,14 @@ export async function sendPasswordResetEmail(
 
                     <!-- Security note -->
                     <div style="margin-top:24px;padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
-                      <p style="margin:0;font-size:12px;color:#92400e;line-height:1.5;">
-                        ⚠️ If you didn't request this, you can safely ignore this email. Your password won't change.
-                      </p>
+                    <p style="margin:0;font-size:12px;color:#92400e;line-height:1.5;display:flex;align-items:flex-start;gap:8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    If you didn't request this, you can safely ignore this email. Your password won't change.
+                    </p>
                     </div>
                   </td>
                 </tr>
@@ -122,7 +127,7 @@ export async function sendPasswordResetEmail(
                 <tr>
                   <td style="padding:20px 32px;background:#fafaf8;border-top:1px solid #e2e0d8;">
                     <p style="margin:0;font-size:11px;color:#c8c6bc;text-align:center;line-height:1.6;">
-                      This email was sent by ${displayName} · POStore<br>
+                      This email was sent by ${displayName} team<br>
                       <a href="https://pos.upendoapps.com" style="color:#9a9a8e;text-decoration:none;">pos.upendoapps.com</a>
                     </p>
                   </td>
