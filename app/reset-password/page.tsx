@@ -78,7 +78,7 @@ function ResetForm() {
     if (strength.score < 2)   return setError("Please choose a stronger password.");
     setLoading(true); setError("");
     try {
-      const res  = await fetch("/api/auth/reset-password", {
+      const res  = await fetch("/api/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
@@ -110,7 +110,7 @@ function ResetForm() {
 
       {!tokenValid ? (
         <div className="invalid-box">
-          <div style={{ fontSize: 32, marginBottom: 12 }}>
+          <div style={{ fontSize: 32, marginBottom: 12, display: "flex", justifyContent: "center", alignItems: "center" }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
             </svg>

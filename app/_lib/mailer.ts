@@ -56,7 +56,7 @@ export async function sendPasswordResetEmail(
                       <tr>
                         <td>
                           <div style="width:36px;height:36px;background:#141410;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:36px;">
-                            <span style="color:#ffffff;font-size:16px;font-weight:700;">P</span>
+                            <span style="color:#ffffff;font-size:16px;font-weight:700;display:flex;justify-content:center;text-align:center;align-items:center;">P</span>
                           </div>
                         </td>
                         <td style="padding-left:10px;">
@@ -73,7 +73,7 @@ export async function sendPasswordResetEmail(
                     
                     <!-- Icon -->
                     <div style="width:52px;height:52px;background:#fff4f0;border:1px solid #fde8d8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-                      <span style="font-size:24px;">🔐</span>
+                      <span style="font-size:24px;display:flex;align-items:center;justify-content:center;">🔐</span>
                     </div>
 
                     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#141410;letter-spacing:-0.5px;">
