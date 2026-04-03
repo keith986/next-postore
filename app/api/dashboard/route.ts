@@ -155,8 +155,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       activity.push({
         color:   isRefund ? "#dc2626" : "#16a34a",
         message: isRefund
-          ? `<strong>Refund processed</strong> — Order ${o.order_number}, $${Number(o.total).toFixed(2)}`
-          : `<strong>New order ${o.order_number}</strong> — ${o.customer_name}, $${Number(o.total).toFixed(2)}`,
+          ? `<strong>Refund processed</strong> — Order ${o.order_number}, Ksh.${Number(o.total).toFixed(2)}`
+          : `<strong>New order ${o.order_number}</strong> — ${o.customer_name}, Ksh.${Number(o.total).toFixed(2)}`,
         time: timeAgo(o.created_at),
       });
     }
