@@ -31,6 +31,10 @@ const css = `
   .invalid-box { text-align: center; padding: 1rem 0; }
   .back-link { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); text-decoration: none; margin-top: 1.25rem; justify-content: center; transition: color 0.15s; }
   .back-link:hover { color: var(--ink); }
+  .input-wrap { position: relative; }
+  .input-wrap input { padding-right: 38px; }
+  .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 2px; display: flex; align-items: center; transition: color 0.15s; }
+  .eye-btn:hover { color: var(--ink); }
 `;
 
 function getStrength(pw: string): { score: number; label: string; color: string } {
@@ -49,6 +53,20 @@ function getStrength(pw: string): { score: number; label: string; color: string 
   return { score, ...map[score] };
 }
 
+// 1. Add eye icons as SVG components near the top of the file
+const EyeIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
 function ResetForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -61,6 +79,8 @@ function ResetForm() {
   const [error,     setError]     = useState("");
   const [validating, setValidating] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
 
   const strength = getStrength(password);
 
@@ -138,24 +158,47 @@ function ResetForm() {
           {error && <div className="error-box"><span>⚠</span> {error}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="field">
-              <label>New password</label>
-              <input type="password" placeholder="Enter new password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
-              {password && (
-                <>
-                  <div className="strength">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="strength-bar" style={{ background: i <= strength.score ? strength.color : "#e2e0d8" }} />
-                    ))}
-                  </div>
-                  <div className="strength-label" style={{ color: strength.color }}>{strength.label}</div>
-                </>
-              )}
-            </div>
-            <div className="field">
-              <label>Confirm password</label>
-              <input type="password" placeholder="Confirm new password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" />
-            </div>
+<div className="field">
+  <label>New password</label>
+  <div className="input-wrap">
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder="Enter new password"
+      value={password}
+      onChange={e => setPassword(e.target.value)}
+      autoComplete="new-password"
+    />
+    <button type="button" className="eye-btn" onClick={() => setShowPassword(p => !p)}>
+      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+    </button>
+  </div>
+  {password && (
+    <>
+      <div className="strength">
+        {[1,2,3,4].map(i => (
+          <div key={i} className="strength-bar" style={{ background: i <= strength.score ? strength.color : "#e2e0d8" }} />
+        ))}
+      </div>
+      <div className="strength-label" style={{ color: strength.color }}>{strength.label}</div>
+    </>
+  )}
+</div>
+
+<div className="field">
+  <label>Confirm password</label>
+  <div className="input-wrap">
+    <input
+      type={showConfirm ? "text" : "password"}
+      placeholder="Confirm new password"
+      value={confirm}
+      onChange={e => setConfirm(e.target.value)}
+      autoComplete="new-password"
+    />
+    <button type="button" className="eye-btn" onClick={() => setShowConfirm(p => !p)}>
+      {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
+    </button>
+  </div>
+</div>
             <button className="btn" disabled={loading || !password || !confirm}>
               {loading ? "Updating…" : "Update password →"}
             </button>

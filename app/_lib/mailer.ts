@@ -51,29 +51,32 @@ export async function sendPasswordResetEmail(
                 
                 <!-- Header -->
                 <tr>
-                  <td style="padding:32px 32px 24px;border-bottom:1px solid #e2e0d8;">
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td>
-                          <div style="width:36px;height:36px;background:#141410;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:36px;">
-                            <span style="color:#ffffff;font-size:16px;font-weight:700;display:flex;justify-content:center;text-align:center;align-items:center;">P</span>
-                          </div>
-                        </td>
-                        <td style="padding-left:10px;">
-                          <span style="font-size:15px;font-weight:600;color:#141410;">${displayName}</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
+                  <td style="padding:32px 32px 24px;border-bottom:1px solid #e2e0d8;text-align:center;">
+                  <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                    <tr>
+                     <td>
+                       <div style="width:36px;height:36px;background:#141410;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:36px;">
+                        <span style="color:#ffffff;font-size:16px;font-weight:700;">P</span>
+                       </div>
+                     </td>
+                    <td style="padding-left:10px;">
+                      <span style="font-size:15px;font-weight:600;color:#141410;">${displayName}</span>
+                    </td>
+                    </tr>
+                 </table>
+                 </td>
+               </tr>
 
                 <!-- Body -->
                 <tr>
                   <td style="padding:32px;">
                     
                     <!-- Icon -->
-                    <div style="width:52px;height:52px;background:#fff4f0;border:1px solid #fde8d8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-                      <span style="font-size:24px;display:flex;align-items:center;justify-content:center;">🔐</span>
+                    <div style="width:52px;height:52px;background:#fff4f0;border:1px solid #fde8d8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4522a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                     </svg>
                     </div>
 
                     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#141410;letter-spacing:-0.5px;">
