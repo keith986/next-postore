@@ -19,7 +19,7 @@ export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,  
   storeName?: string
-): Promise<void> {
+): Promise<boolean> {
   const displayName = storeName ?? "POStore";
 
   // ── 2. Verify transporter can connect to Gmail ──
@@ -134,7 +134,10 @@ export async function sendPasswordResetEmail(
     `,
     text: `Reset your password\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, ignore this email.`,
   });
-  }catch(sendError){
-    throw sendError;
+
+   return true;
+  }catch(err){
+    console.log("Error sending password reset email:", err);
+    return false;
   }
 }

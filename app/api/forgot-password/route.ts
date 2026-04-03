@@ -39,11 +39,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const sendMails = await sendPasswordResetEmail(email, resetUrl, rows[0].store_name ?? undefined);
 
-    if(sendMails !== undefined){
+    if(sendMails){
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: false, error: "Failed to send email" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to send email" });
 
   } catch (error) {
     console.error("Forgot password error:", error);
