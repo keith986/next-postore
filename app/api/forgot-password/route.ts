@@ -5,8 +5,10 @@ import { sendPasswordResetEmail } from "@/app/_lib/mailer";
 import { RowDataPacket } from "mysql2";
 
 interface UserRow extends RowDataPacket {
-  id:         string;
+  id: string;
   store_name: string | null;
+  email: string;
+  source: "admin" | "staff";
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -16,13 +18,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const pool = await getPool();
-    const [rows] = await pool.query<UserRow[]>(
-      "SELECT id, store_name FROM users WHERE email = ? LIMIT 1",
+
+    // Check users table first, then staff table
+    const [adminRows] = await pool.query<UserRow[]>(
+      "SELECT id, store_name, email, 'admin' AS source FROM users WHERE email = ? LIMIT 1",
       [email]
     );
 
+    const [staffRows] = await pool.query<UserRow[]>(
+      "SELECT id, NULL AS store_name, email, 'staff' AS source FROM staff WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    const user = adminRows[0] ?? staffRows[0] ?? null;
+
     // Always return success to prevent email enumeration
-    if (!rows || rows.length === 0)
+    if (!user)
       return NextResponse.json({ success: true });
 
     const token   = crypto.randomBytes(32).toString("hex");
@@ -32,14 +43,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       `INSERT INTO password_resets (user_id, token, expires_at)
        VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE token = VALUES(token), expires_at = VALUES(expires_at)`,
-      [rows[0].id, token, expires]
+      [user.id, token, expires]
     );
 
     const resetUrl = `https://pos.upendoapps.com/reset-password?token=${token}`;
 
-    const sendMails = await sendPasswordResetEmail(email, resetUrl, rows[0].store_name ?? undefined);
+    const sending = await sendPasswordResetEmail(email, resetUrl, user.store_name ?? undefined);
 
-    if(sendMails){
+    if(sending){
+      console.log(`Password reset email sent to ${email} with token ${token}`);
       return NextResponse.json({ success: true });
     }
 
